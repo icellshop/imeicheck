@@ -12,6 +12,11 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Ruta raíz para comprobar funcionamiento
+app.get('/', (req, res) => {
+  res.send('¡API Backend funcionando correctamente!');
+});
+
 // Variables de entorno
 const API_URL = process.env.IMEI_API_URL;
 const API_USER = process.env.IMEI_API_USER;
