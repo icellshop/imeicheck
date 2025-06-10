@@ -43,7 +43,8 @@ async function sendMailgunEmail(to, subject, text) {
   });
 
   if (!response.ok) {
-    throw new Error('No se pudo enviar el correo.');
+    const errorText = await response.text(); // Captura mensaje real de Mailgun
+    throw new Error(`Mailgun error: ${errorText}`);
   }
   return await response.json();
 }
@@ -67,10 +68,10 @@ app.post('/api/check-imei', async (req, res) => {
   }
 
   try {
-    // CONSTRUYE LA URL SEGÚN LA DOCUMENTACIÓN DE TU API EXTERNA
+    // Construye la URL de la API externa
     const apiUrl = `https://alpha.imeicheck.com/api/php-api/create?key=${encodeURIComponent(API_KEY)}&service=${encodeURIComponent(service_id)}&imei=${encodeURIComponent(imei)}`;
 
-    // HAZ LA PETICIÓN GET (NO POST)
+    // Haz la petición GET
     const apiResponse = await fetch(apiUrl);
     const data = await apiResponse.json();
     console.log('Respuesta de API externa:', data);
@@ -90,7 +91,7 @@ Gracias por usar icellshop.mx`;
         await sendMailgunEmail(email, subject, text);
         console.log('Correo enviado');
       } catch (mailErr) {
-        // No detener el flujo si falla el correo, solo loguear
+        // Ahora el error detallado aparecerá en tus logs
         console.error('Error al enviar email:', mailErr);
       }
     }
