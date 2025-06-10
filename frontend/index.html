@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Checar IMEI - icellshop.mx</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: Arial, sans-serif; background: #f6f6f6; margin: 0; }
+    .container { max-width: 420px; margin: 35px auto; background: #fff; padding: 24px 30px 28px 30px; border-radius: 8px; box-shadow: 0 2px 10px #0001; }
+    h2 { text-align: center; margin-bottom: 22px; }
+    label { margin-top: 10px; font-weight: bold; }
+    input, select { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 18px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; }
+    button { background: #1188e6; color: #fff; padding: 11px 0; border: none; border-radius: 4px; width: 100%; font-size: 18px; cursor: pointer; }
+    button:hover { background: #0a6cb5; }
+    .result { margin-top: 22px; background: #f8f8ff; border: 1px solid #ccc; border-radius: 4px; padding: 13px; font-size: 15px; }
+    .error { color: #c00; }
+    .success { color: #060; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Checar IMEI</h2>
+    <form id="imeiForm" autocomplete="off">
+      <label for="imei">IMEI (15 dígitos):</label>
+      <input type="text" id="imei" name="imei" maxlength="15" pattern="\d{15}" required placeholder="Ejemplo: 357987654321098">
+
+      <label for="service">Servicio:</label>
+      <select id="service" name="service" required>
+        <option value="">-- Selecciona un servicio --</option>
+        <option value="1">Find My iPhone [FMI] (ON/OFF) - $0.01 USD</option>
+        <option value="2">Warranty + Activation - PRO [IMEI/SN] - $0.02 USD</option>
+        <option value="3">Apple FULL INFO [No Carrier] - $0.07 USD</option>
+        <option value="4">iCloud Clean/Lost Check - $0.02 USD</option>
+        <option value="5">Blacklist Status (GSMA) - $0.02 USD</option>
+        <option value="6">Blacklist Pro Check (GSMA) - $0.08 USD</option>
+        <option value="7">Apple Carrier + SimLock - back-up - $0.11 USD</option>
+        <option value="8">Samsung Info (S1) (IMEI) - $0.04 USD</option>
+        <option value="9">SOLD BY + GSX Apple - $1.69 USD</option>
+        <option value="10">IMEI to Model [all brands][IMEI/SN] - $0.01 USD</option>
+        <option value="11">IMEI to Brand/Model/Name - $0.01 USD</option>
+        <option value="12">GSX Next Tether + iOS (GSX Carrier) - $0.60 USD</option>
+        <option value="13">Model + Color + Storage + FMI - $0.02 USD</option>
+        <option value="14">IMEI to SN (Full Convertor) - $0.02 USD</option>
+        <option value="15">T-mobile (ESN) PRO Check - $0.04 USD</option>
+        <option value="16">Verizon (ESN) Clean/Lost Status - $0.03 USD</option>
+        <option value="17">Huawei IMEI Info - $0.07 USD</option>
+        <option value="18">iMac FMI Status On/Off - $0.30 USD</option>
+        <option value="19">Apple FULL INFO [+Carrier] B - $0.12 USD</option>
+        <option value="20">Apple SimLock Check - $0.02 USD</option>
+        <option value="21">SAMSUNG INFO & KNOX STATUS (S2) - $0.14 USD</option>
+        <option value="22">Apple BASIC INFO (PRO) - new - $0.04 USD</option>
+        <option value="23">Apple Carrier Check (S2) - $0.04 USD</option>
+        <option value="25">XIAOMI MI LOCK & INFO - $0.05 USD</option>
+        <option value="27">ONEPLUS IMEI INFO - $0.04 USD</option>
+        <option value="33">Replacement Status (Active Device) - $0.01 USD</option>
+        <option value="34">Replaced Status (Original Device) - $0.01 USD</option>
+        <option value="36">Samsung Info (S1) + Blacklist - $0.06 USD</option>
+        <option value="37">Samsung Info & KNOX STATUS (S1) - $0.09 USD</option>
+        <option value="39">APPLE FULL INFO [+Carrier] A - $0.10 USD</option>
+        <option value="40">APPLE GSX CASES INFO - $1.50 USD</option>
+        <option value="41">MDM Status ON/OFF - $0.30 USD</option>
+        <option value="42">LG IMEI INFO - $0.05 USD</option>
+        <option value="46">MDM Status ON/OFF + GSX Policy + FMI - $0.45 USD</option>
+        <option value="47">Apple FULL + MDM + GSMA PRO - $0.75 USD</option>
+        <option value="50">Apple SERIAL Info(model,size,color) - $0.01 USD</option>
+        <option value="51">Warranty + Activation [SN ONLY] - $0.01 USD</option>
+        <option value="52">Model Description (Any Apple SN/IMEI) - $0.02 USD</option>
+        <option value="55">Blacklist Status - cheap - $0.01 USD</option>
+        <option value="57">Google Pixel Info - $0.12 USD</option>
+        <option value="58">Honor Info - $0.05 USD</option>
+        <option value="59">Realme Info - $0.03 USD</option>
+        <option value="60">Oppo Info - $0.03 USD</option>
+        <option value="61">Apple Demo Unit Device Info - $0.14 USD</option>
+        <option value="62">EID INFO (IMEI TO EID) - $0.02 USD</option>
+      </select>
+
+      <label for="email">Correo electrónico (opcional, para recibir el resultado):</label>
+      <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com">
+
+      <button type="submit">Checar IMEI</button>
+    </form>
+    <div class="result" id="result"></div>
+  </div>
+  <script>
+    document.getElementById('imeiForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const imei = document.getElementById('imei').value.trim();
+      const service_id = document.getElementById('service').value;
+      const email = document.getElementById('email').value.trim();
+      const resultDiv = document.getElementById('result');
+      resultDiv.className = "result";
+      resultDiv.textContent = 'Consultando...';
+
+      if (!/^\d{15}$/.test(imei)) {
+        resultDiv.className += " error";
+        resultDiv.textContent = 'El IMEI debe tener exactamente 15 dígitos numéricos.';
+        return;
+      }
+      if (!service_id) {
+        resultDiv.className += " error";
+        resultDiv.textContent = 'Selecciona un servicio.';
+        return;
+      }
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        resultDiv.className += " error";
+        resultDiv.textContent = 'Correo electrónico inválido.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/check-imei', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ imei, service_id, email })
+        });
+        const data = await res.json();
+        if (data.success) {
+          resultDiv.className += " success";
+          resultDiv.innerHTML = `<b>Resultado:</b><br><pre style="white-space: pre-wrap;">${JSON.stringify(data, null, 2)}</pre>${email ? "<br>El resultado también fue enviado a tu correo." : ""}`;
+        } else {
+          resultDiv.className += " error";
+          resultDiv.innerHTML = `<b>Error:</b> ${data.error || 'No se pudo consultar el IMEI.'}`;
+        }
+      } catch {
+        resultDiv.className += " error";
+        resultDiv.textContent = 'Error de conexión.';
+      }
+    });
+  </script>
+</body>
+</html>
