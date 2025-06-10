@@ -14,18 +14,12 @@ app.use(cors({
 app.use(express.json());
 
 // --- SERVIR FRONTEND ---
-// Sirve todos los archivos estáticos de la carpeta frontend
 app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Cuando visitan "/", devuelve el index.html del frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // --- VARIABLES DE ENTORNO ---
-// (Asegúrate de tener estas variables configuradas en Render)
-const API_URL = process.env.IMEI_API_URL;
-const API_USER = process.env.IMEI_API_USER;
 const API_KEY = process.env.IMEI_API_KEY;
 const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN;
@@ -57,31 +51,29 @@ async function sendMailgunEmail(to, subject, text) {
 // --- ENDPOINT PARA CHECAR IMEI ---
 app.post('/api/check-imei', async (req, res) => {
   const { imei, service_id, email } = req.body;
+  console.log('Datos recibidos:', { imei, service_id, email });
 
   if (!imei || !/^\d{15}$/.test(imei)) {
+    console.log('IMEI inválido');
     return res.status(400).json({ error: 'IMEI inválido' });
   }
   if (!service_id) {
+    console.log('Servicio inválido');
     return res.status(400).json({ error: 'Servicio inválido' });
   }
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    console.log('Email inválido');
     return res.status(400).json({ error: 'Email inválido' });
   }
 
   try {
-    // Consultar API externa
-    const apiResponse = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        username: API_USER,
-        api_key: API_KEY,
-        action: 'place_order',
-        service_id,
-        imei
-      })
-    });
+    // CONSTRUYE LA URL SEGÚN LA DOCUMENTACIÓN DE TU API EXTERNA
+    const apiUrl = `https://alpha.imeicheck.com/api/php-api/create?key=${encodeURIComponent(API_KEY)}&service=${encodeURIComponent(service_id)}&imei=${encodeURIComponent(imei)}`;
+
+    // HAZ LA PETICIÓN GET (NO POST)
+    const apiResponse = await fetch(apiUrl);
     const data = await apiResponse.json();
+    console.log('Respuesta de API externa:', data);
 
     // Si el usuario pidió email, enviarlo
     if (email) {
@@ -96,6 +88,7 @@ Gracias por usar icellshop.mx`;
 
       try {
         await sendMailgunEmail(email, subject, text);
+        console.log('Correo enviado');
       } catch (mailErr) {
         // No detener el flujo si falla el correo, solo loguear
         console.error('Error al enviar email:', mailErr);
@@ -104,6 +97,7 @@ Gracias por usar icellshop.mx`;
 
     res.json({ ...data, success: true });
   } catch (err) {
+    console.error('Error general en endpoint:', err);
     res.status(500).json({ error: 'Error al conectar con IMEI API' });
   }
 });
