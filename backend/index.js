@@ -76,14 +76,17 @@ app.post('/api/check-imei', async (req, res) => {
     const data = await apiResponse.json();
     console.log('Respuesta de API externa:', data);
 
-    // Si el usuario pidió email, enviarlo
+    // Extrae sólo el campo 'result' (o un mensaje de error si no existe)
+    const resultText = data.result || 'No se obtuvo resultado para este IMEI.';
+
+    // Si el usuario pidió email, enviar sólo el campo result
     if (email) {
       const subject = 'Resultado de tu consulta IMEI en icellshop.mx';
       const text = `Hola,
 
 Aquí tienes el resultado de tu consulta IMEI (${imei}):
 
-${JSON.stringify(data, null, 2)}
+${resultText}
 
 Gracias por usar icellshop.mx`;
 
@@ -96,7 +99,8 @@ Gracias por usar icellshop.mx`;
       }
     }
 
-    res.json({ ...data, success: true });
+    // Devuelve sólo el campo 'result' al frontend, junto con success
+    res.json({ result: resultText, success: true });
   } catch (err) {
     console.error('Error general en endpoint:', err);
     res.status(500).json({ error: 'Error al conectar con IMEI API' });
