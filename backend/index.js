@@ -25,13 +25,16 @@ const MAILGUN_API_KEY = process.env.MAILGUN_API_KEY;
 const MAILGUN_DOMAIN = process.env.MAILGUN_DOMAIN;
 const MAILGUN_FROM = process.env.MAILGUN_FROM || `noreply@${MAILGUN_DOMAIN}`;
 
-// --- FUNCIÓN PARA ENVIAR EMAIL CON MAILGUN ---
-async function sendMailgunEmail(to, subject, text) {
+// --- FUNCIÓN PARA ENVIAR EMAIL CON MAILGUN (HTML y Texto Plano) ---
+async function sendMailgunEmail(to, subject, text, html = null) {
   const mailForm = new formData();
   mailForm.append('from', MAILGUN_FROM);
   mailForm.append('to', to);
   mailForm.append('subject', subject);
   mailForm.append('text', text);
+  if (html) {
+    mailForm.append('html', html);
+  }
 
   const response = await fetch(`https://api.mailgun.net/v3/${MAILGUN_DOMAIN}/messages`, {
     method: 'POST',
@@ -43,7 +46,7 @@ async function sendMailgunEmail(to, subject, text) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text(); // Captura mensaje real de Mailgun
+    const errorText = await response.text();
     throw new Error(`Mailgun error: ${errorText}`);
   }
   return await response.json();
@@ -82,16 +85,23 @@ app.post('/api/check-imei', async (req, res) => {
     // Si el usuario pidió email, enviar sólo el campo result
     if (email) {
       const subject = 'Resultado de tu consulta IMEI en icellshop.mx';
+      // Texto plano sin etiquetas HTML
       const text = `Hola,
 
 Aquí tienes el resultado de tu consulta IMEI (${imei}):
 
-${resultText}
+${resultText.replace(/<[^>]+>/g, '')}
 
 Gracias por usar icellshop.mx`;
 
+      // HTML con formato
+      const html = `<p>Hola,</p>
+<p>Aquí tienes el resultado de tu consulta IMEI (${imei}):</p>
+<p>${resultText}</p>
+<p>Gracias por usar icellshop.mx</p>`;
+
       try {
-        await sendMailgunEmail(email, subject, text);
+        await sendMailgunEmail(email, subject, text, html);
         console.log('Correo enviado');
       } catch (mailErr) {
         // Ahora el error detallado aparecerá en tus logs
