@@ -4,84 +4,276 @@
   <meta charset="UTF-8">
   <title>Checar IMEI - icellshop.mx</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Apple-style, modern and minimal -->
   <style>
-    body { font-family: Arial, sans-serif; background: #f6f6f6; margin: 0; }
-    .container { max-width: 420px; margin: 35px auto; background: #fff; padding: 24px 30px 28px 30px; border-radius: 8px; box-shadow: 0 2px 10px #0001; }
-    h2 { text-align: center; margin-bottom: 22px; }
-    label { margin-top: 10px; font-weight: bold; }
-    input, select { width: 100%; padding: 8px; margin-top: 5px; margin-bottom: 18px; border-radius: 4px; border: 1px solid #ccc; font-size: 16px; }
-    button { background: #1188e6; color: #fff; padding: 11px 0; border: none; border-radius: 4px; width: 100%; font-size: 18px; cursor: pointer; }
-    button:hover { background: #0a6cb5; }
-    .result { margin-top: 22px; background: #f8f8ff; border: 1px solid #ccc; border-radius: 4px; padding: 13px; font-size: 15px; }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, sans-serif;
+      color: #111;
+    }
+    .container {
+      max-width: 430px;
+      background: #fff;
+      margin: 48px auto 0 auto;
+      padding: 38px 38px 36px 38px;
+      border-radius: 18px;
+      box-shadow: 0 8px 32px 0 rgba(60,60,60,0.05), 0 1.5px 5px 0 rgba(60,60,60,0.04);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    h2 {
+      text-align: center;
+      font-weight: 600;
+      font-size: 2.1rem;
+      letter-spacing: -1px;
+      margin: 0 0 26px 0;
+      color: #111;
+    }
+    label {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 4px;
+      margin-top: 10px;
+      color: #222;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin-bottom: 17px;
+    }
+    input, select {
+      padding: 12px 10px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e5;
+      font-size: 1rem;
+      background: #f7f7fa;
+      color: #111;
+      outline: none;
+      transition: border 0.2s;
+    }
+    input:focus, select:focus {
+      border: 1.5px solid #1881f4;
+      background: #fff;
+    }
+    .service-search {
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e5;
+      font-size: 1rem;
+      background: #f7f7fa;
+      color: #111;
+      margin-bottom: 6px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .service-search:focus {
+      border: 1.5px solid #1881f4;
+      background: #fff;
+    }
+    button {
+      background: #111;
+      color: #fff;
+      padding: 13px 0;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
+      font-size: 1.12rem;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      margin-top: 10px;
+      box-shadow: 0 1px 3px rgba(60,60,60,0.03);
+      transition: background 0.17s;
+    }
+    button:hover, button:focus {
+      background: #1881f4;
+    }
+    .result {
+      margin-top: 22px;
+      background: #f8faff;
+      border: 1px solid #e3eaf7;
+      border-radius: 8px;
+      padding: 19px 17px 17px 17px;
+      font-size: 1.05rem;
+      min-height: 36px;
+      word-break: break-word;
+      transition: background 0.2s;
+      box-shadow: 0 0.5px 2px #1881f411;
+    }
     .error { color: #c00; }
-    .success { color: #060; }
+    .success { color: #0a7b37; }
+    @media (max-width: 520px) {
+      .container { max-width: 98vw; padding: 18px 6vw 20px 6vw; }
+      h2 { font-size: 1.4rem;}
+    }
+    ::placeholder {color: #b8b8ba;}
+    .select-wrapper {
+      position: relative;
+      width: 100%;
+    }
+    .select-wrapper:after {
+      content: '';
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      width: 0;
+      height: 0;
+      pointer-events: none;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 7px solid #b3b3b3;
+      transform: translateY(-50%);
+    }
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background: #f7f7fa;
+      padding-right: 38px;
+      border: 1px solid #e0e0e5;
+    }
+    .apple-logo {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 17px;
+    }
+    .apple-logo svg {
+      width: 36px;
+      height: 36px;
+      fill: #111;
+      opacity: 0.12;
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <div class="apple-logo">
+      <svg viewBox="0 0 40 40">
+        <path d="M32.1,27.7c-0.7,1.6-1.5,2.9-2.5,4.1c-1.6,2-3.3,3.1-5.1,3.1c-1,0-2.2-0.3-3.6-0.8c-1.4-0.5-2.6-0.8-3.6-0.8
+	c-1.1,0-2.3,0.3-3.6,0.8c-1.3,0.5-2.5,0.8-3.5,0.8c-1.9,0-3.7-1.1-5.3-3.2c-1.8-2.3-3.1-5.6-3.1-8.9c0-2.5,0.6-4.6,1.8-6.3
+	c1.2-1.7,2.8-2.6,4.7-2.6c0.9,0,2.2,0.3,3.7,0.9c1.5,0.6,2.4,0.9,2.7,0.9c0.3,0,1.3-0.4,2.7-0.9c1.5-0.6,2.8-0.9,3.7-0.9
+	c2,0,3.6,0.8,4.7,2.5c-1.9,1-2.8,2.5-2.8,4.4c0,1.4,0.5,2.6,1.6,3.5c1,0.8,2.2,1.3,3.6,1.3c0.3,0,0.7-0.1,1.3-0.3
+	C32.2,25.7,32.5,26.7,32.1,27.7z M25.1,7.2c0,1-0.4,2-1.1,2.8c-0.8,0.9-2,1.6-3.1,1.5c0-0.1,0-0.3,0-0.4c0-0.8,0.4-1.7,1-2.4
+	c0.7-0.8,2-1.5,3.1-1.6C25,7.2,25,7.2,25.1,7.2z"/>
+      </svg>
+    </div>
     <h2>Checar IMEI</h2>
     <form id="imeiForm" autocomplete="off">
-      <label for="imei">IMEI (15 dígitos):</label>
-      <input type="text" id="imei" name="imei" maxlength="15" pattern="\d{15}" required placeholder="Ejemplo: 357987654321098">
+      <div class="input-group">
+        <label for="imei">IMEI (15 dígitos):</label>
+        <input type="text" id="imei" name="imei" maxlength="15" pattern="\d{15}" required placeholder="Ejemplo: 357987654321098">
+      </div>
 
-      <label for="service">Servicio:</label>
-      <select id="service" name="service" required>
-        <option value="">-- Selecciona un servicio --</option>
-        <option value="1">Find My iPhone [FMI] (ON/OFF) - $0.01 USD</option>
-        <option value="2">Warranty + Activation - PRO [IMEI/SN] - $0.02 USD</option>
-        <option value="3">Apple FULL INFO [No Carrier] - $0.07 USD</option>
-        <option value="4">iCloud Clean/Lost Check - $0.02 USD</option>
-        <option value="5">Blacklist Status (GSMA) - $0.02 USD</option>
-        <option value="6">Blacklist Pro Check (GSMA) - $0.08 USD</option>
-        <option value="7">Apple Carrier + SimLock - back-up - $0.11 USD</option>
-        <option value="8">Samsung Info (S1) (IMEI) - $0.04 USD</option>
-        <option value="9">SOLD BY + GSX Apple - $1.69 USD</option>
-        <option value="10">IMEI to Model [all brands][IMEI/SN] - $0.01 USD</option>
-        <option value="11">IMEI to Brand/Model/Name - $0.01 USD</option>
-        <option value="12">GSX Next Tether + iOS (GSX Carrier) - $0.60 USD</option>
-        <option value="13">Model + Color + Storage + FMI - $0.02 USD</option>
-        <option value="14">IMEI to SN (Full Convertor) - $0.02 USD</option>
-        <option value="15">T-mobile (ESN) PRO Check - $0.04 USD</option>
-        <option value="16">Verizon (ESN) Clean/Lost Status - $0.03 USD</option>
-        <option value="17">Huawei IMEI Info - $0.07 USD</option>
-        <option value="18">iMac FMI Status On/Off - $0.30 USD</option>
-        <option value="19">Apple FULL INFO [+Carrier] B - $0.12 USD</option>
-        <option value="20">Apple SimLock Check - $0.02 USD</option>
-        <option value="21">SAMSUNG INFO & KNOX STATUS (S2) - $0.14 USD</option>
-        <option value="22">Apple BASIC INFO (PRO) - new - $0.04 USD</option>
-        <option value="23">Apple Carrier Check (S2) - $0.04 USD</option>
-        <option value="25">XIAOMI MI LOCK & INFO - $0.05 USD</option>
-        <option value="27">ONEPLUS IMEI INFO - $0.04 USD</option>
-        <option value="33">Replacement Status (Active Device) - $0.01 USD</option>
-        <option value="34">Replaced Status (Original Device) - $0.01 USD</option>
-        <option value="36">Samsung Info (S1) + Blacklist - $0.06 USD</option>
-        <option value="37">Samsung Info & KNOX STATUS (S1) - $0.09 USD</option>
-        <option value="39">APPLE FULL INFO [+Carrier] A - $0.10 USD</option>
-        <option value="40">APPLE GSX CASES INFO - $1.50 USD</option>
-        <option value="41">MDM Status ON/OFF - $0.30 USD</option>
-        <option value="42">LG IMEI INFO - $0.05 USD</option>
-        <option value="46">MDM Status ON/OFF + GSX Policy + FMI - $0.45 USD</option>
-        <option value="47">Apple FULL + MDM + GSMA PRO - $0.75 USD</option>
-        <option value="50">Apple SERIAL Info(model,size,color) - $0.01 USD</option>
-        <option value="51">Warranty + Activation [SN ONLY] - $0.01 USD</option>
-        <option value="52">Model Description (Any Apple SN/IMEI) - $0.02 USD</option>
-        <option value="55">Blacklist Status - cheap - $0.01 USD</option>
-        <option value="57">Google Pixel Info - $0.12 USD</option>
-        <option value="58">Honor Info - $0.05 USD</option>
-        <option value="59">Realme Info - $0.03 USD</option>
-        <option value="60">Oppo Info - $0.03 USD</option>
-        <option value="61">Apple Demo Unit Device Info - $0.14 USD</option>
-        <option value="62">EID INFO (IMEI TO EID) - $0.02 USD</option>
-      </select>
+      <div class="input-group">
+        <label for="service-search">Buscar servicio:</label>
+        <input type="text" id="service-search" class="service-search" placeholder="Escribe para buscar servicio...">
+      </div>
 
-      <label for="email">Correo electrónico (opcional, para recibir el resultado):</label>
-      <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com">
+      <div class="input-group select-wrapper">
+        <label for="service">Servicio:</label>
+        <select id="service" name="service" required>
+          <option value="">-- Selecciona un servicio --</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="email">Correo electrónico (opcional, para recibir el resultado):</label>
+        <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com">
+      </div>
 
       <button type="submit">Checar IMEI</button>
     </form>
     <div class="result" id="result"></div>
   </div>
   <script>
+    // Servicios como array
+    const services = [
+      {id: "1",  label: "Find My iPhone [FMI] (ON/OFF) - $0.01 USD"},
+      {id: "2",  label: "Warranty + Activation - PRO [IMEI/SN] - $0.02 USD"},
+      {id: "3",  label: "Apple FULL INFO [No Carrier] - $0.07 USD"},
+      {id: "4",  label: "iCloud Clean/Lost Check - $0.02 USD"},
+      {id: "5",  label: "Blacklist Status (GSMA) - $0.02 USD"},
+      {id: "6",  label: "Blacklist Pro Check (GSMA) - $0.08 USD"},
+      {id: "7",  label: "Apple Carrier + SimLock - back-up - $0.11 USD"},
+      {id: "8",  label: "Samsung Info (S1) (IMEI) - $0.04 USD"},
+      {id: "9",  label: "SOLD BY + GSX Apple - $1.69 USD"},
+      {id: "10", label: "IMEI to Model [all brands][IMEI/SN] - $0.01 USD"},
+      {id: "11", label: "IMEI to Brand/Model/Name - $0.01 USD"},
+      {id: "12", label: "GSX Next Tether + iOS (GSX Carrier) - $0.60 USD"},
+      {id: "13", label: "Model + Color + Storage + FMI - $0.02 USD"},
+      {id: "14", label: "IMEI to SN (Full Convertor) - $0.02 USD"},
+      {id: "15", label: "T-mobile (ESN) PRO Check - $0.04 USD"},
+      {id: "16", label: "Verizon (ESN) Clean/Lost Status - $0.03 USD"},
+      {id: "17", label: "Huawei IMEI Info - $0.07 USD"},
+      {id: "18", label: "iMac FMI Status On/Off - $0.30 USD"},
+      {id: "19", label: "Apple FULL INFO [+Carrier] B - $0.12 USD"},
+      {id: "20", label: "Apple SimLock Check - $0.02 USD"},
+      {id: "21", label: "SAMSUNG INFO & KNOX STATUS (S2) - $0.14 USD"},
+      {id: "22", label: "Apple BASIC INFO (PRO) - new - $0.04 USD"},
+      {id: "23", label: "Apple Carrier Check (S2) - $0.04 USD"},
+      {id: "25", label: "XIAOMI MI LOCK & INFO - $0.05 USD"},
+      {id: "27", label: "ONEPLUS IMEI INFO - $0.04 USD"},
+      {id: "33", label: "Replacement Status (Active Device) - $0.01 USD"},
+      {id: "34", label: "Replaced Status (Original Device) - $0.01 USD"},
+      {id: "36", label: "Samsung Info (S1) + Blacklist - $0.06 USD"},
+      {id: "37", label: "Samsung Info & KNOX STATUS (S1) - $0.09 USD"},
+      {id: "39", label: "APPLE FULL INFO [+Carrier] A - $0.10 USD"},
+      {id: "40", label: "APPLE GSX CASES INFO - $1.50 USD"},
+      {id: "41", label: "MDM Status ON/OFF - $0.30 USD"},
+      {id: "42", label: "LG IMEI INFO - $0.05 USD"},
+      {id: "46", label: "MDM Status ON/OFF + GSX Policy + FMI - $0.45 USD"},
+      {id: "47", label: "Apple FULL + MDM + GSMA PRO - $0.75 USD"},
+      {id: "50", label: "Apple SERIAL Info(model,size,color) - $0.01 USD"},
+      {id: "51", label: "Warranty + Activation [SN ONLY] - $0.01 USD"},
+      {id: "52", label: "Model Description (Any Apple SN/IMEI) - $0.02 USD"},
+      {id: "55", label: "Blacklist Status - cheap - $0.01 USD"},
+      {id: "57", label: "Google Pixel Info - $0.12 USD"},
+      {id: "58", label: "Honor Info - $0.05 USD"},
+      {id: "59", label: "Realme Info - $0.03 USD"},
+      {id: "60", label: "Oppo Info - $0.03 USD"},
+      {id: "61", label: "Apple Demo Unit Device Info - $0.14 USD"},
+      {id: "62", label: "EID INFO (IMEI TO EID) - $0.02 USD"}
+    ];
+
+    // Renderiza los servicios en el dropdown
+    function renderServicesDropdown(filtered) {
+      const select = document.getElementById('service');
+      select.innerHTML = '<option value="">-- Selecciona un servicio --</option>';
+      (filtered || services).forEach(s => {
+        const op = document.createElement('option');
+        op.value = s.id;
+        op.textContent = s.label;
+        select.appendChild(op);
+      });
+    }
+
+    // Filtro dinámico de servicios
+    document.getElementById('service-search').addEventListener('input', function(e) {
+      const q = e.target.value.trim().toLowerCase();
+      if (!q) {
+        renderServicesDropdown();
+        return;
+      }
+      const filtered = services.filter(s => s.label.toLowerCase().includes(q));
+      renderServicesDropdown(filtered);
+    });
+
+    // Rellenar dropdown al iniciar
+    renderServicesDropdown();
+
+    // Selección de servicio por teclado (buscador)
+    document.getElementById('service-search').addEventListener('keydown', function(e) {
+      if (e.key === "ArrowDown") {
+        document.getElementById('service').focus();
+      }
+    });
+
     document.getElementById('imeiForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const imei = document.getElementById('imei').value.trim();
