@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const sequelize = require('./config/db');
+const path = require('path');
 
 dotenv.config();
 
@@ -58,7 +59,26 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/countrylist', countryListRoutes);
 
-// =========== ENDPOINT RAÍZ PARA RENDER ===========
+// =========== SERVIR ESTÁTICOS PUBLIC ===========
+app.use(express.static(path.join(__dirname, 'public')));
+
+// =========== RUTAS LIMPIAS PARA ARCHIVOS HTML ===========
+app.get('/add-funds',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-funds.html')));
+app.get('/orders-g',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-orders.html')));
+app.get('/payments-g',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-payments.html')));
+app.get('/services-g',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-services.html')));
+app.get('/users-global',(req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-users.html')));
+app.get('/admin',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/dashboard',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/imei-guest',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'imei-check-guest.html')));
+app.get('/imei',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'imei-check.html')));
+app.get('/invoices',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'invoices.html')));
+app.get('/home',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing-client.html')));
+app.get('/login',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+app.get('/order-history',(req, res) => res.sendFile(path.join(__dirname, 'public', 'order-history.html')));
+app.get('/profile',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'profile.html')));
+
+// =========== ENDPOINT RAÍZ PARA RENDER/API ===========
 app.get('/', (req, res) => {
   res.send('API imeicheck funcionando');
 });
