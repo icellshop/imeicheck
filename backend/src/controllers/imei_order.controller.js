@@ -112,24 +112,43 @@ exports.createOrder = async (req, res) => {
     }
 
     // Notificación por mail si corresponde
-    if (['completed', 'partial'].includes(newOrder.status)) {
-      let emailTo = newOrder.guest_email;
-      if (!emailTo && newOrder.user_id) {
-        const user = await User.findByPk(newOrder.user_id);
-        emailTo = user ? user.email : null;
-      }
-      if (emailTo) {
-        await sendMail({
-          to: emailTo,
-          type: 'order_result',
-          data: {
-            result: newOrder.result,
-            imeis: imeisArr,
-            service: newOrder.service_name_at_order
-          }
-        });
-      }
-    }
+if (['completed', 'partial'].includes(newOrder.status)) {
+  let emailTo = newOrder.guest_email;
+  if (!emailTo && newOrder.user_id) {
+    const user = await User.findByPk(newOrder.user_id);
+    emailTo = user ? user.email : null;
+  }
+  if (emailTo) {
+    // Suponiendo que imeisArr es un array de objetos con campos similares al JSON que pegaste antes
+    const imeiObj = imeisArr[0] || {};
+    const imei = imeiObj.imei || newOrder.imei || '';
+    const modelo = imeiObj.api?.object?.model || 'Desconocido';
+    const fmiStatus = imeiObj.api?.object?.fmiOn === false ? 'OFF' : 'ON';
+    const status = newOrder.status || 'Desconocido';
+    const resultado = imeiObj.api?.result || imeiObj.result || newOrder.result || 'Sin resultado';
+
+    const subject = `Resultado de tu orden IMEI [${imei}]`;
+
+    const html = `
+      <h2>¡Aquí está el resultado de tu consulta IMEI!</h2>
+      <ul>
+        <li><strong>Modelo:</strong> ${modelo}</li>
+        <li><strong>IMEI:</strong> ${imei}</li>
+        <li><strong>Find My iPhone:</strong> ${fmiStatus}</li>
+        <li><strong>Estado de la orden:</strong> ${status}</li>
+      </ul>
+      <pre style="background:#f6f6f6;padding:1em;border-radius:5px;">${resultado}</pre>
+      <p>Gracias por usar nuestro servicio.</p>
+    `;
+
+    await sendMail({
+      to: emailTo,
+      subject,
+      html,
+      type: null // No uses 'order_result' así forzamos tu subject y html
+    });
+  }
+}
 
     res.status(201).json(clientResults);
   } catch (error) {

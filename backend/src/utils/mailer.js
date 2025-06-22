@@ -34,7 +34,7 @@ const templates = {
     }
 
     return {
-      subject: `Resultado de tu orden IMEI [${imei}]`,
+      subject: `Resultado de tu orden IMEI [${order.imei}]`,
       html: `
         <div style="font-family:sans-serif;">
           <h2>¡Tu orden fue procesada exitosamente!</h2>
