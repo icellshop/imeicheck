@@ -24,6 +24,13 @@ function cleanImeiResult(html) {
   return text;
 }
 
+function getFrontendUrl() {
+  if (!process.env.FRONTEND_URL) {
+    throw new Error('FRONTEND_URL no está definido en variables de entorno');
+  }
+  return process.env.FRONTEND_URL.replace(/\/$/, ''); // quita / final si lo hay
+}
+
 exports.createStripeCheckoutSession = async (req, res) => {
   try {
     const user_id = req.user.user_id;
@@ -34,6 +41,8 @@ exports.createStripeCheckoutSession = async (req, res) => {
 
     const user = await User.findByPk(user_id);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const frontendUrl = getFrontendUrl();
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -53,12 +62,8 @@ exports.createStripeCheckoutSession = async (req, res) => {
         recharge_amount: String(amount),
         original_amount: original_amount ? String(original_amount) : String(amount),
       },
-      success_url: process.env.FRONTEND_URL
-        ? `${process.env.FRONTEND_URL}/add-funds.html?funds=success&session_id={CHECKOUT_SESSION_ID}`
-        : 'https://laughing-space-journey-v656p7q5pgwr3jxv-8080.app.github.dev/add-funds.html?funds=success&session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: process.env.FRONTEND_URL
-        ? `${process.env.FRONTEND_URL}/add-funds.html?funds=cancel`
-        : 'https://laughing-space-journey-v656p7q5pgwr3jxv-8080.app.github.dev/add-funds.html?funds=cancel',
+      success_url: `${frontendUrl}/add-funds.html?funds=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/add-funds.html?funds=cancel`,
     });
 
     res.json({ checkout_url: session.url });
@@ -104,6 +109,8 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
       return res.status(400).json({ error: 'Precio de servicio inválido' });
     }
 
+    const frontendUrl = getFrontendUrl();
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -128,12 +135,8 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
         username: String(username),
         email: email || '',
       },
-      success_url: process.env.FRONTEND_URL
-        ? `${process.env.FRONTEND_URL}/imei-check-guest.html?payment=success&session_id={CHECKOUT_SESSION_ID}`
-        : 'https://laughing-space-journey-v656p7q5pgwr3jxv-8080.app.github.dev/imei-check-guest.html?payment=success&session_id={CHECKOUT_SESSION_ID}',
-      cancel_url: process.env.FRONTEND_URL
-        ? `${process.env.FRONTEND_URL}/imei-check-guest.html?payment=cancel`
-        : 'https://laughing-space-journey-v656p7q5pgwr3jxv-8080.app.github.dev/imei-check-guest.html?payment=cancel',
+      success_url: `${frontendUrl}/imei-check-guest.html?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/imei-check-guest.html?payment=cancel`,
     });
 
     res.json({ url: session.url });
