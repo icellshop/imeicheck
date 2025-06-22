@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IMEI Check - IMEICHECK2.COM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Remixicon Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #181a1b;
+      --secondary: #212325;
+      --accent: #1e88e5;
+      --accent-dark: #1a73e8;
+      --success: #43a047;
+      --success-dark: #388e3c;
+      --text: #f4f4f4;
+      --muted: #b0b0b0;
+      --btn: #1e88e5;
+      --btn-hover: #1565c0;
+      --radius: 16px;
+      --shadow: 0 2px 32px 0 rgba(0,0,0,0.6);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--primary);
+      color: var(--text);
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      height: 100%;
+      scroll-behavior: smooth;
+    }
+    body, #mainLayout {
+      height: 100vh;
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+    }
+    header {
+      width: 100vw;
+      background: var(--primary);
+      box-shadow: 0 0 0 0;
+      z-index: 10;
+      position: sticky;
+      top: 0;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-inner {
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 80px;
+    }
+    .header-title-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .logo-title {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+    .logo-title i {
+      color: var(--accent);
+      font-size: 2.2rem;
+      margin-right: 4px;
+    }
+    .sidebar {
+      width: 230px;
+      min-width: 180px;
+      background: var(--secondary);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18);
+      z-index: 100;
+      padding-top: 90px;
+    }
+    .sidebar-username {
+      margin: 0 0 16px 0;
+      padding: 0 24px;
+      font-size: 1.13rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-username i {
+      color: var(--accent);
+      font-size: 1.25em;
+    }
+    .sidebar-balance-label {
+      font-weight: 600;
+      color: var(--success);
+      background: var(--primary);
+      border-radius: var(--radius);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 1.07rem;
+      box-shadow: 0 1px 8px 0 rgba(34, 139, 34, 0.09);
+      margin: 0 24px 24px 24px;
+    }
+    .sidebar-balance-label i {
+      color: var(--success-dark);
+      font-size: 1.1em;
+    }
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 16px;
+    }
+    .sidebar-nav a {
+      color: var(--text);
+      opacity: .85;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      transition: opacity .18s, color .18s, background .17s;
+      font-size: 1.08rem;
+      text-align: left;
+      text-decoration: none !important;
+      border-bottom: none !important;
+      user-select: none;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      opacity: 1;
+      color: var(--accent);
+      background: #20252a;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    .sidebar-nav .btn {
+      margin-top: 18px;
+      width: 100%;
+      justify-content: center;
+      font-size: 1.08rem;
+      background: var(--btn);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px 0;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-block;
+    }
+    .sidebar-nav .btn:hover {
+      background: var(--btn-hover);
+      color: #fff;
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; min-width: 60px; }
+      .sidebar-username { font-size: 1rem; padding: 0 6px; }
+      .sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }
+      .header-inner { padding: 0 8px; }
+    }
+    @media (max-width: 650px) {
+      .sidebar { display: none; }
+      .header-inner { flex-direction: column; gap: 6px; height: auto; }
+      .header-title-center { position: static; }
+      .main-content { margin-left: 0 !important; }
+    }
+    .main-content {
+      margin-left: 230px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: calc(100vw - 230px);
+      box-sizing: border-box;
+    }
+    @media (max-width: 900px) {
+      .main-content {
+        margin-left: 60px;
+        width: calc(100vw - 60px);
+      }
+    }
+    @media (max-width: 650px) {
+      .main-content {
+        margin-left: 0;
+        width: 100vw;
+      }
+    }
+    #imeiCheckPageArea {
+      width: 100%;
+      max-width: 460px;
+      background: var(--secondary);
+      color: var(--text);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px 28px;
+      text-align: center;
+      margin: 60px auto 0 auto;
+      display: block;
+    }
+    #imeiCheckPageArea form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #imeiCheckPageArea h2 {
+      margin-top: 0;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+    .imei-hint {
+      color: var(--muted);
+      font-size: 0.98em;
+      margin-bottom: 8px;
+      display: block;
+      text-align: center;
+      font-style: italic;
+    }
+    #imeiCheckPageArea label {
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 8px;
+      display: block;
+      text-align: center;
+    }
+    #imeiCheckInput {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      background: #191b1d;
+      color: #fff;
+      outline: none;
+      text-align: center;
+      box-sizing: border-box;
+      appearance: none;
+      min-height: 48px;
+      resize: vertical;
+      font-family: 'Inter', Arial, sans-serif;
+      transition: min-height 0.1s;
+    }
+    #imeiCheckPageArea select {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      background: #191b1d;
+      color: #fff;
+      outline: none;
+      text-align: center;
+      box-sizing: border-box;
+      appearance: none;
+      cursor: pointer;
+    }
+    #imeiCheckPageArea select:focus {
+      background: #23272a;
+    }
+    #imeiCheckPageArea .btn {
+      width: 100%;
+      padding: 15px;
+      margin-top: 10px;
+      background: var(--btn);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1.15rem;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-block;
+      position: relative;
+    }
+    #imeiCheckPageArea .btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    #imeiCheckPageArea .info-box { display: none !important; }
+    #imeiResultBox {
+      margin-top: 24px;
+      width: 100%;
+      text-align: left;
+    }
+    .loader {
+      border: 2.5px solid #1e88e5;
+      border-top: 2.5px solid #fff;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      display: inline-block;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg);}
+      100% { transform: rotate(360deg);}
+    }
+    footer {
+      background: #121212;
+      color: #888;
+      text-align: center;
+      padding: 32px 0 12px 0;
+      font-size: 1rem;
+      border-radius: 16px 16px 0 0;
+      margin-top: 56px;
+    }
+    .footer-links {
+      margin: 0 0 12px 0;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: center;
+    }
+    .footer-links a {
+      color: #888;
+      font-size: 1.1rem;
+      opacity: .8;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    .footer-links a:hover {
+      color: #fff;
+      opacity: 1;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    @media (max-width: 520px) {
+      #imeiCheckPageArea {
+        padding: 18px 8px;
+        max-width: 98vw;
+      }
+      .main-content {
+        padding: 0 2vw;
+      }
+      #imeiCheckInput {
+        min-height: 32px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="landing-client.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-username" id="sidebarUsername">
+        <i class="ri-user-3-fill"></i>
+        <span id="sidebarUsernameText">Username</span>
+      </div>
+      <div class="sidebar-balance-label" id="userBalanceNav" style="display:none;">
+        <i class="ri-wallet-3-fill"></i>
+        Balance: <span id="balanceAmount">$0.00</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="imei-check.html" class="active">IMEI Check</a>
+        <a href="add-funds.html">Add Funds</a>
+        <a href="order-history.html">Order History</a>
+        <a href="invoices.html">Invoices</a>
+        <button class="btn" id="profileBtnNav" style="margin-top:18px;">Profile</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div id="imeiCheckPageArea">
+        <h2>IMEI Check</h2>
+        <form id="imeiCheckPageForm" autocomplete="off">
+          <span class="imei-hint">Find your IMEI by dialing <b>*#06#</b> on your device</span>
+          <label for="imeiCheckInput"><i class="ri-fingerprint-2-line"></i> Enter up to 50 IMEIs (one per line)</label>
+          <textarea id="imeiCheckInput" rows="1" maxlength="800" placeholder="One IMEI per line, up to 50 IMEIs" required></textarea>
+
+          <label for="serviceSelect"><i class="ri-service-fill"></i> Select a Service</label>
+          <select id="serviceSelect" required>
+            <option value="">Loading services...</option>
+          </select>
+
+          <button class="btn" type="submit" id="submitBtn">
+            <span id="submitBtnText"><i class="ri-search-line"></i> Submit IMEIs</span>
+            <span id="submitBtnLoader" style="display:none;vertical-align:middle;">
+              <span class="loader" style="margin-left:8px;vertical-align:middle;"></span>
+            </span>
+          </button>
+          <div id="imeiResultBox"></div>
+        </form>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="#">Terms of Service</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Contact</a>
+    </div>
+    <div>
+      &copy; 2025 IMEICHECK2.COM. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    function getQueryParam(name) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name);
+    }
+    const imeisPrefill = getQueryParam('imeis');
+    const imeiTextarea = document.getElementById('imeiCheckInput');
+    if (imeisPrefill) {
+      imeiTextarea.value = imeisPrefill.split(',').join('\n');
+    }
+
+    function adjustRows() {
+      let lines = imeiTextarea.value.split('\n').length;
+      if (imeiTextarea.value !== "" && imeiTextarea.value[imeiTextarea.value.length-1] === '\n') lines += 1;
+      imeiTextarea.rows = Math.max(1, Math.min(lines, 15));
+      imeiTextarea.style.minHeight = (imeiTextarea.rows * 24 + 24) + "px";
+    }
+    imeiTextarea.addEventListener('input', adjustRows);
+    adjustRows();
+
+    async function loadServices() {
+      const select = document.getElementById('serviceSelect');
+      select.innerHTML = '<option value="">Loading services...</option>';
+      try {
+        const res = await fetch('/api/services');
+        const data = await res.json();
+        select.innerHTML = '<option value="">Select a service...</option>';
+        if (Array.isArray(data) && data.length) {
+          data.forEach(service => {
+            const opt = document.createElement('option');
+            opt.value = service.service_id;
+            opt.textContent = service.service_name +
+              (service.price_registered ? ` ($${service.price_registered})` : '');
+            select.appendChild(opt);
+          });
+        } else {
+          select.innerHTML = '<option value="">No services available</option>';
+        }
+      } catch (e) {
+        select.innerHTML = '<option value="">Error loading services</option>';
+      }
+    }
+    loadServices();
+
+    // REFRESH BALANCE (llama después de pedido exitoso o recarga exitosa)
+    async function refreshUserBalance() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch('/api/users/me', {
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        });
+        if (!res.ok) return;
+        const user = await res.json();
+        if (typeof user.balance === 'number' || typeof user.balance === 'string') {
+          document.getElementById('userBalanceNav').style.display = '';
+          document.getElementById('balanceAmount').textContent =
+            '$' + Number(user.balance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+      } catch (e) {
+        document.getElementById('userBalanceNav').style.display = 'none';
+      }
+    }
+
+    document.getElementById('imeiCheckPageForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const imeiResultBox = document.getElementById('imeiResultBox');
+      const submitBtn = document.getElementById('submitBtn');
+      const submitBtnText = document.getElementById('submitBtnText');
+      const submitBtnLoader = document.getElementById('submitBtnLoader');
+      imeiResultBox.innerHTML = '';
+
+      submitBtn.disabled = true;
+      submitBtnText.textContent = 'Procesando';
+      submitBtnLoader.style.display = 'inline-block';
+
+      const imeisRaw = imeiTextarea.value.trim();
+      const service = document.getElementById('serviceSelect').value;
+
+      if (!imeisRaw) {
+        imeiResultBox.innerHTML = '<div style="color:#f55;">Please enter at least one IMEI.</div>';
+        resetBtn();
+        return false;
+      }
+      const imeiLines = imeisRaw.split('\n').map(x => x.trim()).filter(x => x.length > 0);
+      if (imeiLines.length === 0) {
+        imeiResultBox.innerHTML = '<div style="color:#f55;">Please enter at least one IMEI.</div>';
+        resetBtn();
+        return false;
+      }
+      if (imeiLines.length > 50) {
+        imeiResultBox.innerHTML = '<div style="color:#f55;">You can submit up to 50 IMEIs at once.</div>';
+        resetBtn();
+        return false;
+      }
+      for (const imei of imeiLines) {
+        if (!/^\d{15}$/.test(imei)) {
+          imeiResultBox.innerHTML = `<div style="color:#f55;">All IMEIs must be 15 digits. Invalid: ${imei}</div>`;
+          resetBtn();
+          return false;
+        }
+      }
+      if (!service) {
+        imeiResultBox.innerHTML = '<div style="color:#f55;">Please select a service.</div>';
+        resetBtn();
+        return false;
+      }
+
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/imei-orders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+          },
+          body: JSON.stringify({
+            imeis: imeiLines,
+            service_id: service
+          })
+        });
+
+        const data = await res.json();
+
+        // SOLO mostrar el texto de api.result de cada IMEI
+        if (Array.isArray(data)) {
+          imeiResultBox.innerHTML = data.map(item =>
+            `<div style="background:#23272a;padding:18px 14px;border-radius:14px;margin-top:20px;white-space:pre-line;">
+              ${item && item.api && typeof item.api.result === "string" ? item.api.result : "Sin resultado"}
+            </div>`
+          ).join('');
+        } else if (data.api && typeof data.api.result === "string") {
+          imeiResultBox.innerHTML = `<div style="background:#23272a;padding:18px 14px;border-radius:14px;margin-top:20px;white-space:pre-line;">${data.api.result}</div>`;
+        } else if (typeof data.result === "string") {
+          imeiResultBox.innerHTML = `<div style="background:#23272a;padding:18px 14px;border-radius:14px;margin-top:20px;white-space:pre-line;">${data.result}</div>`;
+        } else {
+          imeiResultBox.innerHTML = `<div style="color:#f55;">No se pudo procesar el resultado.</div>`;
+        }
+
+        // Refrescar balance después de pedido exitoso
+        refreshUserBalance();
+
+      } catch (err) {
+        imeiResultBox.innerHTML = `<div style="color:#f55;">Network or server error</div>`;
+      }
+      resetBtn();
+      return false;
+
+      function resetBtn() {
+        submitBtn.disabled = false;
+        submitBtnText.innerHTML = '<i class="ri-search-line"></i> Submit IMEIs';
+        submitBtnLoader.style.display = 'none';
+      }
+    };
+
+    document.getElementById('profileBtnNav').onclick = function() {
+      window.location.href = "profile.html";
+    };
+
+    async function getUserInfo() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const res = await fetch('/api/users/me', {
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        });
+        if (!res.ok) return;
+
+        const user = await res.json();
+        if (user.username) {
+          document.getElementById('sidebarUsernameText').textContent = user.username;
+        }
+        if (typeof user.balance === 'number' || typeof user.balance === 'string') {
+          document.getElementById('userBalanceNav').style.display = '';
+          document.getElementById('balanceAmount').textContent =
+            '$' + Number(user.balance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+      } catch (e) {
+        document.getElementById('userBalanceNav').style.display = 'none';
+      }
+    }
+    getUserInfo();
+  </script>
+</body>
+</html>

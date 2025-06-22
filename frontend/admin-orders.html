@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IMEICHECK2.COM - Admin Orders</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    body { background: #181a1b; color: #f4f4f4; font-family: 'Inter', Arial, sans-serif; min-height: 100vh; margin: 0; padding: 0;}
+    header { background: #181a1b; height: 80px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 0; position: sticky; top: 0; z-index: 10;}
+    .header-inner { width: 100vw; display: flex; align-items: center; justify-content: center; position: relative; height: 80px;}
+    .header-title-center { flex: 1; display: flex; justify-content: center; align-items: center; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; z-index: 1;}
+    .logo-title { font-weight: 700; font-size: 2rem; letter-spacing: 1px; color: #fff; display: flex; align-items: center; gap: 8px; text-align: center; pointer-events: auto; text-decoration: none;}
+    .logo-title i { color: #7c3aed; font-size: 2.2rem; margin-right: 4px;}
+    .sidebar { width: 230px; min-width: 180px; background: #212325; height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; align-items: stretch; box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18); z-index: 100; padding-top: 90px;}
+    .sidebar-username { margin: 0 0 16px 0; padding: 0 24px; font-size: 1.13rem; font-weight: 700; color: #fff; text-align: left; display: flex; align-items: center; gap: 9px; letter-spacing: 0.5px;}
+    .sidebar-username i { color: #7c3aed; font-size: 1.25em;}
+    .sidebar-nav { display: flex; flex-direction: column; gap: 8px; padding: 0 16px;}
+    .sidebar-nav a { color: #f4f4f4; opacity: .85; font-weight: 600; background: none; border: none; cursor: pointer; padding: 12px 16px; border-radius: 20px; font-family: inherit; transition: opacity .18s, color .18s, background .17s; font-size: 1.08rem; text-align: left; text-decoration: none !important; border-bottom: none !important; user-select: none;}
+    .sidebar-nav a:hover, .sidebar-nav a.active { opacity: 1; color: #7c3aed; background: #222437; text-decoration: none !important; border-bottom: none !important;}
+    .sidebar-nav .btn { margin-top: 18px; width: 100%; justify-content: center; font-size: 1.08rem; background: #e53935; color: #fff; border: none; border-radius: 20px; padding: 14px 0; font-weight: 700; box-shadow: 0 4px 32px 0 rgba(0,0,0,0.6); cursor: pointer; transition: background .2s; display: inline-block;}
+    .sidebar-nav .btn:hover { background: #b71c1c; color: #fff;}
+    .main-content { margin-left: 230px; padding: 36px 24px; min-height: 100vh; background: #181a1b;}
+    @media (max-width: 900px) {.sidebar { width: 60px; min-width: 60px; }.sidebar-username { font-size: 1rem; padding: 0 6px; }.sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }.header-inner { padding: 0 8px; }.main-content { margin-left: 60px; }}
+    @media (max-width: 650px) {.sidebar { display: none; }.main-content { margin-left: 0; }.header-inner { flex-direction: column; gap: 6px; height: auto; }.header-title-center { position: static; } }
+    .admin-orders-header { font-size: 2rem; font-weight: 800; margin-bottom: 28px; text-align: left; color: #7c3aed;}
+    .orders-table-container { background: #222437; border-radius: 20px; box-shadow: 0 4px 32px 0 rgba(0,0,0,0.6); padding: 22px 14px; margin-bottom: 22px; overflow-x: auto;}
+    table.orders-table { width: 100%; border-collapse: collapse; background: transparent; min-width: 1200px;}
+    table.orders-table th, table.orders-table td { padding: 12px 12px; border: none; font-size: 1.04rem; text-align: left;}
+    table.orders-table th { background: #282c45; color: #7c3aed; font-weight: 700;}
+    table.orders-table td { color: #f4f4f4; border-bottom: 1px solid #232437; vertical-align: middle;}
+    table.orders-table tr:last-child td { border-bottom: none; }
+    .loading-row td { text-align: center; color: #a7adc1; font-style: italic;}
+    .error-td { color: #e53935; font-weight: 700;}
+    .imei-cell { max-width: 240px; overflow-x: auto; white-space: pre-line; font-size: 0.98rem;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="admin.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-username" id="sidebarUsername">
+        <i class="ri-user-3-fill"></i>
+        <span id="sidebarUsernameText">Superadmin</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="admin.html">Dashboard</a>
+        <a href="admin-users.html">Users</a>
+        <a href="admin-services.html">Services</a>
+        <a href="admin-orders.html" class="active">Orders</a>
+        <a href="admin-payments.html">Payments</a>
+        <button class="btn" id="logoutBtn">Logout</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div class="admin-orders-header">Order Management</div>
+      <div class="orders-table-container">
+        <table class="orders-table" id="ordersTable">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Status</th>
+              <th>User Email</th>
+              <th>User Type</th>
+              <th>IMEI(s)</th>
+              <th>Service ID</th>
+              <th>Service Name</th>
+              <th>Price Used</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="loading-row"><td colspan="9">Loading orders...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script>
+    // --- Superadmin access check ---
+    (async function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'landing-guest.html';
+        return;
+      }
+      try {
+        const res = await fetch('/api/users/me', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) {
+          window.location.href = 'landing-guest.html';
+          return;
+        }
+        const user = await res.json();
+        if (user.username) {
+          document.getElementById('sidebarUsernameText').textContent = user.username;
+        }
+        if (user.user_type !== 'superadmin') {
+          window.location.href = 'landing-client.html';
+          return;
+        }
+      } catch (e) {
+        window.location.href = 'landing-guest.html';
+      }
+    })();
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = 'landing-guest.html';
+    };
+
+    // --- Fetch and render orders ---
+    async function fetchAndRenderOrders() {
+      const token = localStorage.getItem('token');
+      const tableBody = document.querySelector('#ordersTable tbody');
+      tableBody.innerHTML = `<tr class="loading-row"><td colspan="9">Loading orders...</td></tr>`;
+
+      let orders = [];
+      try {
+        const res = await fetch('/api/imei-orders/admin-list', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Failed to fetch orders');
+        orders = await res.json();
+      } catch (e) {
+        tableBody.innerHTML = `<tr><td colspan="9" class="error-td">Error loading orders</td></tr>`;
+        return;
+      }
+
+      if (!orders.length) {
+        tableBody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:#a7adc1;">No orders found.</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = orders.map(order => {
+        const orderDate = order.created_at ? new Date(order.created_at).toLocaleString() : '';
+        // Decide email
+        const userEmail = order.user_type_at_order === "guest"
+          ? (order.guest_email || '')
+          : (order.user_email || '');
+        // IMEI puede ser string JSON, array o texto
+        let imeiStr = '';
+        try {
+          if (typeof order.imei === "string" && order.imei.startsWith("[")) {
+            imeiStr = JSON.parse(order.imei).join(', ');
+          } else if (Array.isArray(order.imei)) {
+            imeiStr = order.imei.join(', ');
+          } else if (order.imei) {
+            imeiStr = order.imei;
+          }
+        } catch (e) {
+          imeiStr = order.imei || '';
+        }
+        return `
+          <tr>
+            <td>${order.order_id}</td>
+            <td>${order.status}</td>
+            <td>${userEmail}</td>
+            <td>${order.user_type_at_order || ''}</td>
+            <td class="imei-cell">${imeiStr}</td>
+            <td>${order.service_id}</td>
+            <td>${order.service_name_at_order || ''}</td>
+            <td>$${order.price_used != null ? parseFloat(order.price_used).toFixed(2) : ''}</td>
+            <td>${orderDate}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    fetchAndRenderOrders();
+  </script>
+</body>
+</html>

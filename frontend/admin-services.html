@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IMEICHECK2.COM - Admin Services</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    body { background: #181a1b; color: #f4f4f4; font-family: 'Inter', Arial, sans-serif; min-height: 100vh; margin: 0; padding: 0;}
+    header { background: #181a1b; height: 80px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 0; position: sticky; top: 0; z-index: 10;}
+    .header-inner { width: 100vw; display: flex; align-items: center; justify-content: center; position: relative; height: 80px;}
+    .header-title-center { flex: 1; display: flex; justify-content: center; align-items: center; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; z-index: 1;}
+    .logo-title { font-weight: 700; font-size: 2rem; letter-spacing: 1px; color: #fff; display: flex; align-items: center; gap: 8px; text-align: center; pointer-events: auto; text-decoration: none;}
+    .logo-title i { color: #7c3aed; font-size: 2.2rem; margin-right: 4px;}
+    .sidebar { width: 230px; min-width: 180px; background: #212325; height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; align-items: stretch; box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18); z-index: 100; padding-top: 90px;}
+    .sidebar-username { margin: 0 0 16px 0; padding: 0 24px; font-size: 1.13rem; font-weight: 700; color: #fff; text-align: left; display: flex; align-items: center; gap: 9px; letter-spacing: 0.5px;}
+    .sidebar-username i { color: #7c3aed; font-size: 1.25em;}
+    .sidebar-nav { display: flex; flex-direction: column; gap: 8px; padding: 0 16px;}
+    .sidebar-nav a { color: #f4f4f4; opacity: .85; font-weight: 600; background: none; border: none; cursor: pointer; padding: 12px 16px; border-radius: 20px; font-family: inherit; transition: opacity .18s, color .18s, background .17s; font-size: 1.08rem; text-align: left; text-decoration: none !important; border-bottom: none !important; user-select: none;}
+    .sidebar-nav a:hover, .sidebar-nav a.active { opacity: 1; color: #7c3aed; background: #222437; text-decoration: none !important; border-bottom: none !important;}
+    .sidebar-nav .btn { margin-top: 18px; width: 100%; justify-content: center; font-size: 1.08rem; background: #e53935; color: #fff; border: none; border-radius: 20px; padding: 14px 0; font-weight: 700; box-shadow: 0 4px 32px 0 rgba(0,0,0,0.6); cursor: pointer; transition: background .2s; display: inline-block;}
+    .sidebar-nav .btn:hover { background: #b71c1c; color: #fff;}
+    .main-content { margin-left: 230px; padding: 36px 24px; min-height: 100vh; background: #181a1b;}
+    @media (max-width: 900px) {.sidebar { width: 60px; min-width: 60px; }.sidebar-username { font-size: 1rem; padding: 0 6px; }.sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }.header-inner { padding: 0 8px; }.main-content { margin-left: 60px; }}
+    @media (max-width: 650px) {.sidebar { display: none; }.main-content { margin-left: 0; }.header-inner { flex-direction: column; gap: 6px; height: auto; }.header-title-center { position: static; } }
+    .admin-services-header { font-size: 2rem; font-weight: 800; margin-bottom: 28px; text-align: left; color: #7c3aed;}
+    .toolbar { display: flex; gap: 16px; margin-bottom: 14px; align-items: center; }
+    .toolbar button, .toolbar label { font-size: 1rem; background: #232437; color: #f4f4f4; border: 1px solid #333; border-radius: 8px; padding: 7px 16px; cursor: pointer; transition: background .2s;}
+    .toolbar button:hover, .toolbar label:hover { background: #282c45; }
+    .toolbar input[type="file"] { display: none; }
+    .services-table-container { background: #222437; border-radius: 20px; box-shadow: 0 4px 32px 0 rgba(0,0,0,0.6); padding: 22px 14px; margin-bottom: 22px; overflow-x: auto;}
+    table.services-table { width: 100%; border-collapse: collapse; background: transparent; min-width: 1200px;}
+    table.services-table th, table.services-table td { padding: 12px 12px; border: none; font-size: 1.04rem; text-align: left;}
+    table.services-table th { background: #282c45; color: #7c3aed; font-weight: 700; cursor:pointer; user-select:none; }
+    table.services-table th.sorted-asc:after { content: " ▲"; }
+    table.services-table th.sorted-desc:after { content: " ▼"; }
+    table.services-table td { color: #f4f4f4; border-bottom: 1px solid #232437; vertical-align: middle;}
+    table.services-table tr:last-child td { border-bottom: none; }
+    .service-input, .service-select { background: #232437; color: #f4f4f4; border-radius: 7px; border: 1px solid #333; padding: 4px 8px; font-size: 1rem; width: 100%; box-sizing: border-box;}
+    .service-input:disabled { opacity: 0.7; }
+    .update-btn { background: #7c3aed; color: #fff; border: none; border-radius: 10px; padding: 7px 18px; font-weight: 600; cursor: pointer; transition: background 0.17s; margin-left: 8px; font-size: 1.01rem;}
+    .update-btn:hover { background: #6d28d9; }
+    .loading-row td { text-align: center; color: #a7adc1; font-style: italic;}
+    .success-td { color: #43a047; font-weight: 700;}
+    .error-td { color: #e53935; font-weight: 700;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="admin.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-username" id="sidebarUsername">
+        <i class="ri-user-3-fill"></i>
+        <span id="sidebarUsernameText">Superadmin</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="admin.html">Dashboard</a>
+        <a href="admin-users.html">Users</a>
+        <a href="admin-services.html" class="active">Services</a>
+        <a href="admin-orders.html">Orders</a>
+        <a href="admin-payments.html">Payments</a>
+        <button class="btn" id="logoutBtn">Logout</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div class="admin-services-header">Service Management</div>
+      <div class="toolbar">
+        <button id="downloadExcelBtn"><i class="ri-download-2-line"></i> Download Excel</button>
+        <label for="uploadExcelInput"><i class="ri-upload-2-line"></i> Upload Excel</label>
+        <input type="file" id="uploadExcelInput" accept=".xlsx, .xls, .csv" />
+      </div>
+      <div class="services-table-container">
+        <table class="services-table" id="servicesTable">
+          <thead>
+            <tr>
+              <th data-key="service_id">ID</th>
+              <th data-key="service_name">Name</th>
+              <th data-key="description">Description</th>
+              <th data-key="cost">Cost $</th>
+              <th data-key="price_guest">Guest $</th>
+              <th data-key="price_registered">Registered $</th>
+              <th data-key="price_premium">Premium $</th>
+              <th data-key="price_pro">Pro $</th>
+              <th data-key="active">Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="loading-row"><td colspan="10">Loading services...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script>
+    // --- Superadmin access check ---
+    (async function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'landing-guest.html';
+        return;
+      }
+      try {
+        const res = await fetch('/api/users/me', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) {
+          window.location.href = 'landing-guest.html';
+          return;
+        }
+        const user = await res.json();
+        if (user.username) {
+          document.getElementById('sidebarUsernameText').textContent = user.username;
+        }
+        if (user.user_type !== 'superadmin') {
+          window.location.href = 'landing-client.html';
+          return;
+        }
+      } catch (e) {
+        window.location.href = 'landing-guest.html';
+      }
+    })();
+
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = 'landing-guest.html';
+    };
+
+    // ---- Sorting helpers ----
+    let currentSort = { key: 'service_id', dir: 'asc' };
+    let globalServices = [];
+
+    function sortServices(services, {key, dir}) {
+      const sorted = [...services];
+      sorted.sort((a, b) => {
+        const aVal = a[key], bVal = b[key];
+        if (aVal === bVal) return 0;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+        if (typeof aVal === 'number' && typeof bVal === 'number')
+          return dir === 'asc' ? aVal - bVal : bVal - aVal;
+        return dir === 'asc'
+          ? String(aVal).localeCompare(String(bVal))
+          : String(bVal).localeCompare(String(aVal));
+      });
+      return sorted;
+    }
+
+    // ------------ Main fetch/render -------------
+    async function fetchAndRenderServices() {
+      const token = localStorage.getItem('token');
+      const tableBody = document.querySelector('#servicesTable tbody');
+      tableBody.innerHTML = `<tr class="loading-row"><td colspan="10">Loading services...</td></tr>`;
+
+      let services = [];
+      try {
+        const res = await fetch('/api/services', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Failed to fetch services');
+        services = await res.json();
+      } catch (e) {
+        tableBody.innerHTML = `<tr><td colspan="10" class="error-td">Error loading services</td></tr>`;
+        return;
+      }
+      globalServices = services;
+
+      renderServicesTable();
+    }
+
+    function renderServicesTable() {
+      const tableBody = document.querySelector('#servicesTable tbody');
+      // Sort
+      const sorted = sortServices(globalServices, currentSort);
+
+      if (!sorted.length) {
+        tableBody.innerHTML = `<tr><td colspan="10" style="text-align:center;color:#a7adc1;">No services found.</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = sorted.map(service => {
+        return `
+          <tr data-serviceid="${service.service_id}">
+            <td>${service.service_id}</td>
+            <td><input class="service-input" type="text" value="${service.service_name || ''}" name="service_name"></td>
+            <td><input class="service-input" type="text" value="${service.description || ''}" name="description"></td>
+            <td><input class="service-input" type="number" min="0" step="0.01" value="${service.cost ?? ''}" name="cost"></td>
+            <td><input class="service-input" type="number" min="0" step="0.01" value="${service.price_guest ?? ''}" name="price_guest"></td>
+            <td><input class="service-input" type="number" min="0" step="0.01" value="${service.price_registered ?? ''}" name="price_registered"></td>
+            <td><input class="service-input" type="number" min="0" step="0.01" value="${service.price_premium ?? ''}" name="price_premium"></td>
+            <td><input class="service-input" type="number" min="0" step="0.01" value="${service.price_pro ?? ''}" name="price_pro"></td>
+            <td>
+              <select class="service-select" name="active">
+                <option value="true" ${service.active ? 'selected' : ''}>true</option>
+                <option value="false" ${!service.active ? 'selected' : ''}>false</option>
+              </select>
+            </td>
+            <td>
+              <button class="update-btn">Update</button>
+              <span class="update-status"></span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Add event listeners for update
+      tableBody.querySelectorAll('.update-btn').forEach(btn => {
+        btn.onclick = async function() {
+          const tr = btn.closest('tr');
+          const serviceId = tr.getAttribute('data-serviceid');
+          const inputs = tr.querySelectorAll('.service-input, .service-select');
+          const statusSpan = tr.querySelector('.update-status');
+          let data = {};
+          inputs.forEach(inp => {
+            if (inp.type === "number") {
+              data[inp.name] = inp.value === "" ? null : parseFloat(inp.value);
+            } else if (inp.tagName === "SELECT") {
+              data[inp.name] = inp.value === "true";
+            } else {
+              data[inp.name] = inp.value;
+            }
+          });
+          btn.disabled = true;
+          statusSpan.textContent = '...';
+          try {
+            const response = await fetch(`/api/services/${serviceId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+              },
+              body: JSON.stringify(data)
+            });
+            if (response.ok) {
+              statusSpan.textContent = '✔';
+              statusSpan.className = 'update-status success-td';
+              setTimeout(() => statusSpan.textContent = '', 2000);
+            } else {
+              statusSpan.textContent = '✖';
+              statusSpan.className = 'update-status error-td';
+              setTimeout(() => statusSpan.textContent = '', 2000);
+            }
+          } catch (e) {
+            statusSpan.textContent = '✖';
+            statusSpan.className = 'update-status error-td';
+            setTimeout(() => statusSpan.textContent = '', 2000);
+          }
+          btn.disabled = false;
+        };
+      });
+      // Update sort indicators
+      document.querySelectorAll('#servicesTable th').forEach(th => {
+        th.classList.remove('sorted-asc', 'sorted-desc');
+        const key = th.getAttribute('data-key');
+        if (key === currentSort.key) th.classList.add('sorted-' + currentSort.dir);
+      });
+    }
+
+    // ---- Sorting event listeners ----
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('#servicesTable th[data-key]').forEach(th => {
+        th.addEventListener('click', function() {
+          const key = th.getAttribute('data-key');
+          if (currentSort.key === key) {
+            currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+          } else {
+            currentSort.key = key;
+            currentSort.dir = 'asc';
+          }
+          renderServicesTable();
+        });
+      });
+    });
+
+    // ---- Excel Export ----
+    document.getElementById('downloadExcelBtn').onclick = function() {
+      if (!globalServices.length) return;
+      // Flat array for export
+      const rows = globalServices.map(s => ({
+        ID: s.service_id,
+        Name: s.service_name,
+        Description: s.description,
+        "Cost $": s.cost,
+        "Guest $": s.price_guest,
+        "Registered $": s.price_registered,
+        "Premium $": s.price_premium,
+        "Pro $": s.price_pro,
+        "Active": s.active
+      }));
+      const ws = XLSX.utils.json_to_sheet(rows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Services");
+      XLSX.writeFile(wb, "services.xlsx");
+    };
+
+    // ---- Excel Import ----
+    document.getElementById('uploadExcelInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const data = new Uint8Array(ev.target.result);
+        const wb = XLSX.read(data, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, {header: 1});
+        // Find columns
+        const header = json[0].map(h => (h||'').toString().trim().toLowerCase());
+        const idIdx = header.indexOf('id');
+        if (idIdx === -1) { alert('No se encontró columna ID en el archivo.'); return; }
+        // Prepare for bulk update
+        const updates = [];
+        for (let i = 1; i < json.length; i++) {
+          const row = json[i];
+          if (!row[idIdx]) continue;
+          const up = {};
+          up.service_id = row[idIdx];
+          if (header.indexOf('name') !== -1) up.service_name = row[header.indexOf('name')];
+          if (header.indexOf('description') !== -1) up.description = row[header.indexOf('description')];
+          if (header.indexOf('cost $') !== -1) up.cost = row[header.indexOf('cost $')];
+          if (header.indexOf('guest $') !== -1) up.price_guest = row[header.indexOf('guest $')];
+          if (header.indexOf('registered $') !== -1) up.price_registered = row[header.indexOf('registered $')];
+          if (header.indexOf('premium $') !== -1) up.price_premium = row[header.indexOf('premium $')];
+          if (header.indexOf('pro $') !== -1) up.price_pro = row[header.indexOf('pro $')];
+          if (header.indexOf('active') !== -1) {
+            const val = row[header.indexOf('active')];
+            up.active = (val === true || val === "true" || val === 1 || val === "1");
+          }
+          updates.push(up);
+        }
+        if (!updates.length) { alert('No se encontraron filas válidas en el archivo.'); return; }
+        if (!confirm("¿Actualizar " + updates.length + " servicios?")) return;
+        // Sequentially update each service via API
+        (async function bulkUpdate() {
+          let ok = 0, fail = 0;
+          for (const up of updates) {
+            try {
+              const resp = await fetch(`/api/services/${up.service_id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + localStorage.getItem('token')
+                },
+                body: JSON.stringify(up)
+              });
+              if (resp.ok) ok++; else fail++;
+            } catch (e) { fail++; }
+          }
+          alert(`Actualización finalizada: ${ok} actualizados, ${fail} errores`);
+          fetchAndRenderServices();
+        })();
+      };
+      reader.readAsArrayBuffer(file);
+      // clear input for next upload
+      e.target.value = '';
+    });
+
+    // ---- Label click triggers file input ----
+    document.querySelector('label[for="uploadExcelInput"]').onclick = function() {
+      document.getElementById('uploadExcelInput').click();
+    };
+
+    // ---- Inicializar ----
+    fetchAndRenderServices();
+  </script>
+</body>
+</html>

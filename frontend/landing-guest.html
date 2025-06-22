@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IMEICHECK2.COM - IMEI Lookup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Remixicon Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #181a1b;
+      --secondary: #212325;
+      --accent: #1e88e5;
+      --accent-dark: #1a73e8;
+      --success: #43a047;
+      --success-dark: #388e3c;
+      --text: #f4f4f4;
+      --muted: #b0b0b0;
+      --btn: #1e88e5;
+      --btn-hover: #1565c0;
+      --radius: 16px;
+      --shadow: 0 2px 32px 0 rgba(0,0,0,0.6);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--primary);
+      color: var(--text);
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      height: 100%;
+      scroll-behavior: smooth;
+    }
+    body, #mainLayout {
+      height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    header {
+      width: 100vw;
+      background: var(--primary);
+      box-shadow: 0 0 0 0;
+      z-index: 10;
+      position: sticky;
+      top: 0;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-inner {
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 80px;
+    }
+    .header-title-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .logo-title {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+    .logo-title i {
+      color: var(--accent);
+      font-size: 2.2rem;
+      margin-right: 4px;
+    }
+    .sidebar {
+      width: 230px;
+      min-width: 180px;
+      background: var(--secondary);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18);
+      z-index: 100;
+      padding-top: 90px;
+    }
+    .sidebar-guest-label {
+      margin: 0 0 16px 0;
+      padding: 0 24px;
+      font-size: 1.13rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-guest-label i {
+      color: var(--accent);
+      font-size: 1.25em;
+    }
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 16px;
+    }
+    .sidebar-nav a,
+    .sidebar-nav button.sidebar-imei-btn {
+      color: var(--text);
+      opacity: .85;
+      font-weight: 600;
+      background: var(--secondary);
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      transition: opacity .18s, color .18s, background .17s;
+      font-size: 1.08rem;
+      text-align: left;
+      text-decoration: none !important;
+      border-bottom: none !important;
+      user-select: none;
+      display: block;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active,
+    .sidebar-nav button.sidebar-imei-btn:hover, .sidebar-nav button.sidebar-imei-btn.active {
+      opacity: 1;
+      color: var(--accent);
+      background: #20252a;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    .sidebar-nav .btn {
+      margin-top: 18px;
+      width: 100%;
+      justify-content: center;
+      font-size: 1.08rem;
+      background: var(--btn);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px 0;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-block;
+    }
+    .sidebar-nav .btn:hover {
+      background: var(--btn-hover);
+      color: #fff;
+    }
+    .sidebar-nav .btn#registerBtnNav {
+      background: var(--success);
+      margin-top: 8px;
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; min-width: 60px; }
+      .sidebar-guest-label { font-size: 1rem; padding: 0 6px; }
+      .sidebar-nav a, .sidebar-nav .btn, .sidebar-nav button.sidebar-imei-btn { font-size: .96rem; padding: 10px 9px; }
+      .header-inner { padding: 0 8px; }
+    }
+    @media (max-width: 650px) {
+      .sidebar { display: none; }
+      .header-inner { flex-direction: column; gap: 6px; height: auto; }
+      .header-title-center { position: static; }
+      .main-content { margin-left: 0 !important; }
+    }
+    .main-content {
+      margin-left: 230px;
+      padding: 0;
+      min-height: 100vh;
+      transition: margin-left .21s;
+    }
+    @media (max-width: 900px) {
+      .main-content { margin-left: 60px; }
+    }
+    @media (max-width: 650px) {
+      .main-content { margin-left: 0; }
+    }
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 64px 0 32px 0;
+      min-height: 60vh;
+      gap: 32px;
+    }
+    .hero h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.1;
+      margin: 0;
+      letter-spacing: -1px;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .search-box {
+      background: var(--secondary);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      box-shadow: var(--shadow);
+      display: inline-block;
+      width: 100%;
+      max-width: 420px;
+    }
+    .search-box label {
+      display: block;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    .search-box .imei-hint-under-label {
+      display: block;
+      color: #8a98a8;
+      font-size: 0.98em;
+      font-weight: 400;
+      margin: 4px 0 10px 0;
+      text-align: left;
+    }
+    .search-box input[type="text"] {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      background: #191b1d;
+      color: #fff;
+      outline: none;
+    }
+    .search-box input[type="text"]:focus {
+      background: #23272a;
+    }
+    .search-box button {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.15rem;
+      border-radius: var(--radius);
+      font-weight: 700;
+      background: var(--btn);
+      border: none;
+      color: #fff;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .search-box button:hover {
+      background: var(--btn-hover);
+    }
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 36px;
+      margin: 56px 0 32px 0;
+    }
+    .feature {
+      background: var(--secondary);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 32px 28px;
+      min-width: 260px;
+      max-width: 340px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: transform .14s;
+    }
+    .feature:hover {
+      transform: translateY(-8px) scale(1.03);
+      background: #23272a;
+    }
+    .feature i {
+      font-size: 2.2rem;
+      color: var(--accent);
+      margin-bottom: 12px;
+      display: block;
+    }
+    .feature h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 8px 0;
+    }
+    .feature p {
+      color: var(--muted);
+      font-size: 1rem;
+      margin: 0;
+    }
+    .cta {
+      text-align: center;
+      margin: 32px 0 0 0;
+    }
+    .cta .btn {
+      font-size: 1.2rem;
+      padding: 18px 44px;
+      border-radius: calc(var(--radius) * 1.3);
+    }
+    .why {
+      background: var(--secondary);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px 24px;
+      margin: 56px 0 32px 0;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .why h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 18px 0;
+      text-align: center;
+    }
+    .why ul {
+      margin: 0;
+      padding: 0 0 0 16px;
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+    footer {
+      background: #121212;
+      color: #888;
+      text-align: center;
+      padding: 32px 0 12px 0;
+      font-size: 1rem;
+      border-radius: var(--radius) var(--radius) 0 0;
+      margin-top: 56px;
+    }
+    .footer-links {
+      margin: 0 0 12px 0;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: center;
+    }
+    .footer-links a {
+      color: #888;
+      font-size: 1.1rem;
+      opacity: .8;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    .footer-links a:hover {
+      color: #fff;
+      opacity: 1;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="landing-guest.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-guest-label">
+        <i class="ri-user-3-fill"></i>
+        <span>Guest</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="landing-guest.html" class="active">Home</a>
+        <a href="#features">Features</a>
+        <button class="sidebar-imei-btn" id="sidebarImeiBtn"><i class="ri-search-eye-line"></i> IMEI Check</button>
+        <a href="#why">Why Us?</a>
+        <button class="btn" id="loginBtnNav" style="margin-top:18px;">Login</button>
+        <button class="btn" id="registerBtnNav" style="background:var(--success);margin-top:8px;">Register</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <section class="hero">
+        <h1>Fast & Secure <span style="color:var(--accent);">IMEI Lookup</span></h1>
+        <p>
+          Instantly discover the status of your mobile device.<br>
+          Check blacklist, activation, carrier and more, with full privacy.
+        </p>
+        <form class="search-box" id="mainImeiForm" autocomplete="off">
+          <label for="imeiInput"><i class="ri-fingerprint-2-line"></i> Enter your IMEI</label>
+          <span class="imei-hint-under-label">Find your IMEI by dialing <b>*#06#</b> on your device</span>
+          <input type="text" id="imeiInput" maxlength="15" minlength="15" pattern="\d{15}" placeholder="e.g. 356939052799999" required>
+          <button type="submit" id="consultBtn"><i class="ri-search-eye-line"></i> Check IMEI</button>
+        </form>
+      </section>
+
+      <section id="features" class="features">
+        <div class="feature">
+          <i class="ri-shield-keyhole-line"></i>
+          <h3>Total Privacy</h3>
+          <p>We do not store your results. Your lookups are 100% private and secure.</p>
+        </div>
+        <div class="feature">
+          <i class="ri-time-line"></i>
+          <h3>Results in Seconds</h3>
+          <p>Receive your IMEI information instantly for most services.</p>
+        </div>
+        <div class="feature">
+          <i class="ri-global-line"></i>
+          <h3>Global Data Network</h3>
+          <p>International databases, covering nearly every country & carrier.</p>
+        </div>
+        <div class="feature">
+          <i class="ri-money-dollar-circle-line"></i>
+          <h3>Affordable Pricing</h3>
+          <p>Free lookup and premium options at low prices. No hidden fees!</p>
+        </div>
+      </section>
+
+      <div class="cta" style="text-align:center; margin:32px 0 0 0;">
+        <button class="btn" id="imeiCheckBtn" style="font-size:1.15rem;">
+          <i class="ri-search-eye-line"></i> IMEI Check
+        </button>
+      </div>
+
+      <section class="why" id="why">
+        <h2>Why choose IMEICHECK2.COM?</h2>
+        <ul>
+          <li>Check if an IMEI is globally blacklisted.</li>
+          <li>Lookup activation dates, country, and carrier.</li>
+          <li>Fast access, no account required for guests.</li>
+          <li>Real tech support by experts.</li>
+        </ul>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="#">Terms of Service</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Contact</a>
+    </div>
+    <div>
+      &copy; 2025 IMEICHECK2.COM. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    // Main IMEI form submit: redirige a imei-check-guest.html con IMEI populado
+    document.getElementById('mainImeiForm').onsubmit = function(e) {
+      e.preventDefault();
+      const input = document.getElementById('imeiInput');
+      if (!/^\d{15}$/.test(input.value)) {
+        input.style.border = "2px solid #e53935";
+        input.value = '';
+        input.placeholder = "Invalid IMEI";
+        input.focus();
+        return false;
+      }
+      input.style.border = "2px solid #1e88e5";
+      window.location.href = `imei-check-guest.html?imei=${encodeURIComponent(input.value)}`;
+      return false;
+    };
+
+    // Login and Register nav buttons
+    document.getElementById('loginBtnNav').onclick = function() {
+      window.location.href = "/login";
+    };
+    document.getElementById('registerBtnNav').onclick = function() {
+      window.location.href = "/register";
+    };
+
+    // CTA IMEI Check button
+    document.getElementById('imeiCheckBtn').onclick = function() {
+      window.location.href = "imei-check-guest.html";
+    };
+
+    // Sidebar IMEI Check button
+    document.getElementById('sidebarImeiBtn').onclick = function() {
+      window.location.href = "imei-check-guest.html";
+    };
+
+    // --- AUTO REDIRECT TO ADMIN IF SUPERADMIN LOGGED IN ---
+ (async function() {
+  const token = localStorage.getItem('token');
+  if (!token) return;
+  try {
+    const res = await fetch('/api/users/me', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) {
+      console.log('No ok response:', res.status);
+      return;
+    }
+    const user = await res.json();
+    console.log('API /api/users/me responde:', user);
+    // Prueba ambos formatos: root y anidado
+    if (
+      user && (
+        user.user_type === 'superadmin' ||
+        (user.user && user.user.user_type === 'superadmin')
+      )
+    ) {
+      window.location.href = 'admin.html';
+    }
+  } catch (e) {
+    console.log('Error en fetch /api/users/me', e);
+  }
+})();
+  </script>
+</body>
+</html>

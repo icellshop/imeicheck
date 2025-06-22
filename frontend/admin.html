@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IMEICHECK2.COM - Admin Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Remixicon Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary: #181a1b;
+      --secondary: #212325;
+      --accent: #7c3aed;
+      --accent-alt: #1e88e5;
+      --accent-dark: #6d28d9;
+      --success: #43a047;
+      --success-dark: #388e3c;
+      --text: #f4f4f4;
+      --muted: #a7adc1;
+      --btn: #7c3aed;
+      --btn-hover: #6d28d9;
+      --radius: 20px;
+      --shadow: 0 4px 32px 0 rgba(0,0,0,0.6);
+      --danger: #e53935;
+      --warning: #fbc02d;
+      --info: #2196f3;
+      --card-bg: #222437;
+      --surface-bg: #222437;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--primary);
+      color: var(--text);
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      height: 100%;
+      scroll-behavior: smooth;
+    }
+    body, #mainLayout {
+      height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    header {
+      width: 100vw;
+      background: var(--primary);
+      box-shadow: 0 0 0 0;
+      z-index: 10;
+      position: sticky;
+      top: 0;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-inner {
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 80px;
+    }
+    .header-title-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .logo-title {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+    .logo-title i {
+      color: var(--accent);
+      font-size: 2.2rem;
+      margin-right: 4px;
+    }
+    .sidebar {
+      width: 230px;
+      min-width: 180px;
+      background: var(--secondary);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18);
+      z-index: 100;
+      padding-top: 90px;
+    }
+    .sidebar-username {
+      margin: 0 0 16px 0;
+      padding: 0 24px;
+      font-size: 1.13rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-username i {
+      color: var(--accent);
+      font-size: 1.25em;
+    }
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 16px;
+    }
+    .sidebar-nav a {
+      color: var(--text);
+      opacity: .85;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      transition: opacity .18s, color .18s, background .17s;
+      font-size: 1.08rem;
+      text-align: left;
+      text-decoration: none !important;
+      border-bottom: none !important;
+      user-select: none;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      opacity: 1;
+      color: var(--accent);
+      background: #222437;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    .sidebar-nav .btn {
+      margin-top: 18px;
+      width: 100%;
+      justify-content: center;
+      font-size: 1.08rem;
+      background: var(--btn);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px 0;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-block;
+    }
+    .sidebar-nav .btn:hover {
+      background: var(--btn-hover);
+      color: #fff;
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; min-width: 60px; }
+      .sidebar-username { font-size: 1rem; padding: 0 6px; }
+      .sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }
+      .header-inner { padding: 0 8px; }
+    }
+    @media (max-width: 650px) {
+      .sidebar { display: none; }
+      .header-inner { flex-direction: column; gap: 6px; height: auto; }
+      .header-title-center { position: static; }
+      .main-content { margin-left: 0 !important; }
+    }
+    .main-content {
+      margin-left: 230px;
+      padding: 32px 18px;
+      min-height: 100vh;
+      transition: margin-left .21s;
+      background: var(--primary);
+    }
+    @media (max-width: 900px) {
+      .main-content { margin-left: 60px; }
+    }
+    @media (max-width: 650px) {
+      .main-content { margin-left: 0; }
+    }
+    .admin-dashboard-header {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 28px;
+      text-align: left;
+      color: var(--accent);
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr 1.3fr;
+      gap: 32px;
+      margin-bottom: 32px;
+    }
+    @media (max-width: 1200px) {
+      .dashboard-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 900px) {
+      .dashboard-grid { grid-template-columns: 1fr !important; }
+    }
+    .dashboard-card, .dashboard-chart-container {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 26px 24px;
+      margin-bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .dashboard-card h3 {
+      margin: 0 0 8px 0;
+      font-size: 1.18rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .dashboard-metric {
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: var(--success);
+      margin-bottom: 6px;
+    }
+    .dashboard-mini {
+      font-size: 1.28rem;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .dashboard-label {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+    .dashboard-card .filters, .dashboard-chart-container .filters {
+      margin-bottom: 8px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .dashboard-chart-container {
+      padding: 28px 18px 12px 18px;
+      margin-bottom: 32px;
+      background: var(--surface-bg);
+    }
+    .dashboard-chart-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent-dark);
+      margin-bottom: 14px;
+    }
+    .dashboard-quickstats {
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .dashboard-quickbox {
+      background: var(--surface-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 34px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 140px;
+      flex: 1 1 180px;
+      text-align: center;
+      gap: 7px;
+    }
+    .dashboard-quickbox .icon {
+      font-size: 2rem;
+      margin-bottom: 4px;
+      color: var(--success);
+    }
+    .dashboard-quickbox.failed .icon { color: var(--danger); }
+    .dashboard-quickbox.pending .icon { color: var(--warning); }
+    .dashboard-quickbox.total .icon { color: var(--info); }
+    .dashboard-quickbox .quickstat-title {
+      font-weight: 600;
+      color: var(--muted);
+      font-size: 1.02rem;
+      margin-bottom: 2px;
+    }
+    .dashboard-quickbox .quickstat-value {
+      font-size: 1.16rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    #servicesList { margin-top: 16px; }
+    #servicesList div { padding: 3px 0; }
+    .table { width: 100%; border-collapse: collapse; margin: 16px 0; background: #232437; border-radius: 10px; overflow: hidden; }
+    .table th, .table td { padding: 10px 14px; border: none; text-align: left; }
+    .table th { background: #282c45; color: var(--accent); font-weight: 700; font-size: 1.08rem; }
+    .table td { color: var(--text); border-bottom: 1px solid #272a36; font-size: 1.02rem;}
+    .table tr:last-child td { border-bottom: none; }
+    #paymentsListTable td:last-child { text-align: right; font-weight: 700;}
+    #paymentsListTable tbody tr:hover { background: #252a38; }
+    #paymentsListTable tbody tr { transition: background 0.13s; }
+    .no-payments-row td { text-align: center !important; color: var(--muted) !important; }
+    /* Chart.js background */
+    canvas { background: transparent; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="admin.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-username" id="sidebarUsername">
+        <i class="ri-user-3-fill"></i>
+        <span id="sidebarUsernameText">Superadmin</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="admin.html" class="active">Dashboard</a>
+        <a href="admin-users.html">Users</a>
+        <a href="admin-services.html">Services</a>
+        <a href="admin-orders.html">Orders</a>
+        <a href="admin-payments.html">Payments</a>
+        <button class="btn" id="logoutBtn" style="margin-top:18px;background:var(--danger);">Logout</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div class="admin-dashboard-header">
+        Admin Dashboard
+      </div>
+      <!-- Quick stats -->
+      <div class="dashboard-quickstats" id="dashboardQuickStats">
+        <div class="dashboard-quickbox total">
+          <div class="icon"><i class="ri-team-fill"></i></div>
+          <div class="quickstat-title">Users</div>
+          <div class="quickstat-value" id="quickStatUsers">-</div>
+        </div>
+        <div class="dashboard-quickbox total">
+          <div class="icon"><i class="ri-shopping-bag-3-fill"></i></div>
+          <div class="quickstat-title">Orders</div>
+          <div class="quickstat-value" id="quickStatOrders">-</div>
+        </div>
+        <div class="dashboard-quickbox total">
+          <div class="icon"><i class="ri-money-dollar-circle-fill"></i></div>
+          <div class="quickstat-title">Approved Payments</div>
+          <div class="quickstat-value" id="quickStatPayments">-</div>
+        </div>
+      </div>
+      <!-- Orders statistics -->
+      <div class="dashboard-card" style="gap:0;">
+        <div class="dashboard-label">Order Statistics</div>
+        <div class="dashboard-quickstats">
+          <div class="dashboard-quickbox total">
+            <div class="icon"><i class="ri-bar-chart-fill"></i></div>
+            <div class="quickstat-title">Total</div>
+            <div class="quickstat-value" id="statOrdersTotal">-</div>
+          </div>
+          <div class="dashboard-quickbox" style="color:var(--success)">
+            <div class="icon"><i class="ri-checkbox-circle-fill"></i></div>
+            <div class="quickstat-title">Completed</div>
+            <div class="quickstat-value" id="statOrdersCompleted">-</div>
+          </div>
+          <div class="dashboard-quickbox failed">
+            <div class="icon"><i class="ri-close-circle-fill"></i></div>
+            <div class="quickstat-title">Failed</div>
+            <div class="quickstat-value" id="statOrdersFailed">-</div>
+          </div>
+          <div class="dashboard-quickbox pending">
+            <div class="icon"><i class="ri-time-fill"></i></div>
+            <div class="quickstat-title">Pending</div>
+            <div class="quickstat-value" id="statOrdersPending">-</div>
+          </div>
+        </div>
+      </div>
+      <!-- Main grid: Service Used (%), Approved payments chart (center), Top 5 Approved Payments (right) -->
+      <div class="dashboard-grid" style="grid-template-columns: 1fr 2fr 1.3fr;">
+        <!-- Service Used (%) [LEFT] -->
+        <div class="dashboard-card">
+          <div class="dashboard-label">Top 5 Services Used (%)</div>
+          <canvas id="servicesPieChart" width="250" height="170"></canvas>
+          <div id="servicesList"></div>
+        </div>
+        <!-- Approved Payments by Month [MIDDLE] -->
+        <div class="dashboard-card">
+          <div class="dashboard-label">Approved Payments by Month</div>
+          <div class="filters" style="margin-bottom:10px;">
+            <label for="paymentsDateStart">From</label>
+            <input type="month" id="paymentsDateStart" style="border-radius:6px;">
+            <label for="paymentsDateEnd">To</label>
+            <input type="month" id="paymentsDateEnd" style="border-radius:6px;">
+            <button id="paymentsFilterBtn" style="background:var(--btn);color:#fff;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;">Filter</button>
+          </div>
+          <canvas id="paymentsLineChart" width="450" height="200"></canvas>
+        </div>
+        <!-- Top 5 Approved Payments List [RIGHT] -->
+        <div class="dashboard-card">
+          <div class="dashboard-label">Top 5 Approved Payments</div>
+          <table id="paymentsListTable" class="table">
+            <thead>
+              <tr>
+                <th>User Email</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Payments will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+  <footer>
+    <div class="footer-links">
+      <a href="#">Terms of Service</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Contact</a>
+    </div>
+    <div>
+      &copy; 2025 IMEICHECK2.COM. All rights reserved.
+    </div>
+  </footer>
+  <script>
+    // --- Superadmin access check ---
+    (async function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'landing-guest.html';
+        return;
+      }
+      try {
+        const res = await fetch('/api/users/me', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) {
+          window.location.href = 'landing-guest.html';
+          return;
+        }
+        const user = await res.json();
+        if (user.username) {
+          document.getElementById('sidebarUsernameText').textContent = user.username;
+        }
+        if (user.user_type !== 'superadmin') {
+          window.location.href = 'landing-client.html';
+          return;
+        }
+      } catch (e) {
+        window.location.href = 'landing-guest.html';
+      }
+    })();
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = 'landing-guest.html';
+    };
+
+    // ---- API URL BASE ----
+    const API_BASE = "https://laughing-space-journey-v656p7q5pgwr3jxv-8080.app.github.dev/api/dashboard";
+
+    // Currency formatting
+    function formatCurrency(amount) {
+      return amount == null ? '-' : amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+    }
+
+    // ---- QUICK STATS ----
+    async function fetchQuickStats() {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/quick-stats`, { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('quickStatUsers').textContent = data.users ?? '-';
+      document.getElementById('quickStatOrders').textContent = data.orders ?? '-';
+      document.getElementById('quickStatPayments').textContent = formatCurrency(data.payments ?? 0);
+    }
+    fetchQuickStats();
+
+    // ---- ORDER STATISTICS (total, completed, failed, pending) ----
+    async function fetchOrderStats() {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/order-stats`, { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('statOrdersTotal').textContent = data.total ?? '-';
+      document.getElementById('statOrdersCompleted').textContent = data.completed ?? '-';
+      document.getElementById('statOrdersFailed').textContent = data.failed ?? '-';
+      document.getElementById('statOrdersPending').textContent = data.pending ?? '-';
+    }
+    fetchOrderStats();
+
+    // ---- SERVICES USED PIE CHART (percentages and top 5 sorted list) ----
+    let servicesPieChart;
+    async function fetchServicesPieChart() {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/services-usage`, { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return;
+      const data = await res.json();
+      const total = data.reduce((sum, s) => sum + s.count, 0);
+      // Top 5
+      const sorted = [...data].sort((a, b) => b.count - a.count).slice(0, 5);
+      const labels = sorted.map(s => s.service);
+      const counts = sorted.map(s => s.count);
+      const percentages = sorted.map(s => total ? ((s.count / total) * 100).toFixed(1) : 0);
+
+      // Pie chart (top 5 percentages)
+      if (servicesPieChart) servicesPieChart.destroy();
+      servicesPieChart = new Chart(document.getElementById('servicesPieChart').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: labels,
+          datasets: [{
+            data: percentages,
+            backgroundColor: [
+              'rgba(124,58,237,0.9)',
+              'rgba(30,136,229,0.9)',
+              'rgba(67,160,71,0.9)',
+              'rgba(251,192,45,0.9)',
+              'rgba(229,57,53,0.9)'
+            ],
+            borderWidth: 2,
+            borderColor: "#232437"
+          }]
+        },
+        options: {
+          plugins: {
+            tooltip: { callbacks: {
+              label: function(ctx) {
+                return `${ctx.label}: ${counts[ctx.dataIndex]} (${percentages[ctx.dataIndex]}%)`;
+              }
+            }},
+            legend: { labels: { color: "#b0b0b0" }, position: "bottom" }
+          }
+        }
+      });
+
+      // Top 5 listing below the chart
+      document.getElementById('servicesList').innerHTML = sorted.map((s, i) =>
+        `<div>${i + 1}. <b>${s.service}</b> — <b>${s.count}</b> (${((s.count/total)*100).toFixed(1)}%)</div>`
+      ).join('');
+    }
+    fetchServicesPieChart();
+
+    // ---- APPROVED PAYMENTS BY MONTH + TOP 5 ----
+    let paymentsLineChart;
+    async function fetchPaymentsLineChart() {
+      const token = localStorage.getItem('token');
+      const start = document.getElementById('paymentsDateStart').value;
+      const end = document.getElementById('paymentsDateEnd').value;
+      let url = `${API_BASE}/payments-approved-timeline`;
+      if (start || end) {
+        url += `?${start ? `start=${start}` : ""}${start && end ? "&" : ""}${end ? `end=${end}` : ""}`;
+      }
+      const res = await fetch(url, { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) return;
+      const data = await res.json();
+      // Line chart
+      if (paymentsLineChart) paymentsLineChart.destroy();
+      paymentsLineChart = new Chart(document.getElementById('paymentsLineChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: data.months,
+          datasets: [{
+            label: "Approved Payments",
+            data: data.totals,
+            borderColor: "rgba(124,58,237,1)",
+            backgroundColor: "rgba(124,58,237,0.25)",
+            fill: true,
+            pointRadius: 4,
+            pointBackgroundColor: "rgba(124,58,237,1)",
+            tension: 0.37
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: "#b0b0b0" } }
+          },
+          scales: {
+            x: { ticks: { color: "#b0b0b0" } },
+            y: { ticks: { color: "#b0b0b0", callback: formatCurrency } }
+          }
+        }
+      });
+
+      // Payments LIST - Top 5
+      const tbody = document.querySelector('#paymentsListTable tbody');
+      let rows = '';
+      if (data.payments && Array.isArray(data.payments) && data.payments.length) {
+        // Top 5 by amount
+        const top5 = [...data.payments].sort((a, b) => b.amount - a.amount).slice(0, 5);
+        rows = top5.map(p =>
+          `<tr><td>${p.user_email}</td><td>${formatCurrency(p.amount)}</td></tr>`
+        ).join('');
+      }
+      if (!rows) {
+        rows = '<tr class="no-payments-row"><td colspan="2">No payments found.</td></tr>';
+      }
+      tbody.innerHTML = rows;
+    }
+    document.getElementById('paymentsFilterBtn').onclick = fetchPaymentsLineChart;
+    fetchPaymentsLineChart();
+
+    // Initialize payment month inputs to last 12 months by default
+    (function initPaymentMonthInputs() {
+      const now = new Date();
+      const first = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+      document.getElementById('paymentsDateStart').value = first.toISOString().slice(0,7);
+      document.getElementById('paymentsDateEnd').value = now.toISOString().slice(0,7);
+    })();
+
+  </script>
+</body>
+</html>

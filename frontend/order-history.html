@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IMEICHECK2.COM - Order History</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Remixicon Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #181a1b;
+      --secondary: #212325;
+      --accent: #1e88e5;
+      --accent-dark: #1a73e8;
+      --success: #43a047;
+      --success-dark: #388e3c;
+      --text: #f4f4f4;
+      --muted: #b0b0b0;
+      --btn: #1e88e5;
+      --btn-hover: #1565c0;
+      --radius: 16px;
+      --shadow: 0 2px 32px 0 rgba(0,0,0,0.6);
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--primary);
+      color: var(--text);
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      height: 100%;
+      scroll-behavior: smooth;
+    }
+    body, #mainLayout {
+      height: 100vh;
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+    }
+    header {
+      width: 100vw;
+      background: var(--primary);
+      box-shadow: 0 0 0 0;
+      z-index: 10;
+      position: sticky;
+      top: 0;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-inner {
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 80px;
+    }
+    .header-title-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .logo-title {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+    .logo-title i {
+      color: var(--accent);
+      font-size: 2.2rem;
+      margin-right: 4px;
+    }
+    .sidebar {
+      width: 230px;
+      min-width: 180px;
+      background: var(--secondary);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18);
+      z-index: 100;
+      padding-top: 90px;
+    }
+    .sidebar-username {
+      margin: 0 0 16px 0;
+      padding: 0 24px;
+      font-size: 1.13rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-username i {
+      color: var(--accent);
+      font-size: 1.25em;
+    }
+    .sidebar-balance-label {
+      font-weight: 600;
+      color: var(--success);
+      background: var(--primary);
+      border-radius: var(--radius);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 1.07rem;
+      box-shadow: 0 1px 8px 0 rgba(34, 139, 34, 0.09);
+      margin: 0 24px 24px 24px;
+    }
+    .sidebar-balance-label i {
+      color: var(--success-dark);
+      font-size: 1.1em;
+    }
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 16px;
+    }
+    .sidebar-nav a {
+      color: var(--text);
+      opacity: .85;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      transition: opacity .18s, color .18s, background .17s;
+      font-size: 1.08rem;
+      text-align: left;
+      text-decoration: none !important;
+      border-bottom: none !important;
+      user-select: none;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      opacity: 1;
+      color: var(--accent);
+      background: #20252a;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    .sidebar-nav .btn {
+      margin-top: 18px;
+      width: 100%;
+      justify-content: center;
+      font-size: 1.08rem;
+      background: var(--btn);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px 0;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-block;
+    }
+    .sidebar-nav .btn:hover {
+      background: var(--btn-hover);
+      color: #fff;
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; min-width: 60px; }
+      .sidebar-username { font-size: 1rem; padding: 0 6px; }
+      .sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }
+      .header-inner { padding: 0 8px; }
+    }
+    @media (max-width: 650px) {
+      .sidebar { display: none; }
+      .header-inner { flex-direction: column; gap: 6px; height: auto; }
+      .header-title-center { position: static; }
+      .main-content { margin-left: 0 !important; }
+    }
+    .main-content {
+      margin-left: 230px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: calc(100vw - 230px);
+      box-sizing: border-box;
+    }
+    @media (max-width: 900px) {
+      .main-content {
+        margin-left: 60px;
+        width: calc(100vw - 60px);
+      }
+    }
+    @media (max-width: 650px) {
+      .main-content {
+        margin-left: 0;
+        width: 100vw;
+      }
+    }
+    .order-history-area {
+      width: 95%;
+      max-width: 1200px;
+      background: var(--secondary);
+      color: var(--text);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 0 32px 32px 32px;
+      text-align: center;
+      margin: 40px 0 0 0;
+      display: block;
+    }
+    .order-history-area h2 {
+      margin-top: 0;
+      font-weight: 800;
+      margin-bottom: 18px;
+      text-align:center;
+      padding-top: 32px;
+    }
+    .orders-filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content:center;
+      width: 100%;
+    }
+    .orders-filter-bar input, .orders-filter-bar select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: none;
+      font-size: 1rem;
+      background: #23272a;
+      color: var(--text);
+      outline: none;
+      min-width: 120px;
+    }
+    .orders-table-wrapper {
+      width: 100%;
+      margin: 0 auto;
+      display: block;
+      overflow-x: auto;
+      padding-left: 0;
+      padding-right: 0;
+    }
+    .orders-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: transparent;
+      margin: 0 auto;
+      table-layout: fixed;
+    }
+    .orders-table th, .orders-table td {
+      padding: 10px 7px;
+      text-align: left;
+      border-bottom: 1px solid #282b2e;
+      font-size: 0.96rem;
+      vertical-align: top;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .orders-table th {
+      background: var(--primary);
+      color: var(--accent);
+      font-weight: 800;
+      letter-spacing: .5px;
+      font-size: 1.03rem;
+    }
+    .orders-table tr:last-child td {
+      border-bottom: none;
+    }
+    .orders-table td:nth-child(1),
+    .orders-table th:nth-child(1) { width: 90px; }
+    .orders-table td:nth-child(2),
+    .orders-table th:nth-child(2) { width: 85px; }
+    .orders-table td:nth-child(3),
+    .orders-table th:nth-child(3) { width: 180px; }
+    .orders-table td:nth-child(4),
+    .orders-table th:nth-child(4) { width: 140px; }
+    .orders-table td:nth-child(5),
+    .orders-table th:nth-child(5) { width: 330px; }
+    .orders-table td:nth-child(6),
+    .orders-table th:nth-child(6) { width: 110px; }
+    .orders-table td:nth-child(7),
+    .orders-table th:nth-child(7) { width: 70px; }
+ .status {
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-weight: 700;
+  font-size: .97rem;
+  display: inline-block;
+  color: #fff;
+  white-space: nowrap;        /* Fuerza una sola línea */
+  overflow: hidden;           /* Oculta el texto que se desborde */
+  text-overflow: ellipsis;    /* Pone "..." si se pasa el ancho */
+  max-width: 110px;           /* Ajusta el ancho máximo a tu gusto */
+  vertical-align: middle;
+}
+.status.completed { background: #388e3c; color: #fff !important; }
+.status.failed { background: #c62828; }
+.status.pending { background: #757575; }
+.status.partial { background: #ff9800; }
+    .order-date {
+      font-size: .97rem;
+      color: var(--muted);
+    }
+    .order-result {
+      max-width: 310px;
+      overflow-x: auto;
+      font-size: .94rem;
+      background: #191b1d;
+      border-radius: 8px;
+      color: var(--text);
+      padding: 6px 10px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .orders-empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 32px 0 24px 0;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    .orders-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+    .pagination-bar {
+      margin: 15px auto 10px auto;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .pagination-bar button {
+      background: var(--btn);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 12px;
+      margin: 0 2px;
+      font-size: 1.04rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .18s;
+    }
+    .pagination-bar button[disabled] {
+      background: #39404d;
+      color: #aaa;
+      cursor: not-allowed;
+    }
+    .pagination-bar .page-current {
+      background: var(--accent-dark);
+      color: #fff;
+    }
+    @media (max-width: 900px) {
+      .order-history-area { padding: 8px; }
+      .orders-table th, .orders-table td { padding: 8px 5px; }
+      .order-history-area h2 { font-size: 1.4rem;}
+      .orders-table-wrapper { max-width: 100vw; }
+      .orders-filter-bar {
+        padding-left: 3vw;
+        padding-right: 3vw;
+      }
+    }
+    @media (max-width: 600px) {
+      .order-history-area { padding: 2px; }
+      .orders-table th, .orders-table td { font-size: 0.93rem;}
+      .order-result { max-width: 120px; font-size: 0.88rem;}
+      .order-history-area h2 { font-size: 1.12rem;}
+      .orders-table td:nth-child(3),
+      .orders-table th:nth-child(3) { width: 110px; }
+      .orders-table td:nth-child(5),
+      .orders-table th:nth-child(5) { width: 120px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="landing-client.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-username" id="sidebarUsername">
+        <i class="ri-user-3-fill"></i>
+        <span id="sidebarUsernameText">Username</span>
+      </div>
+      <div class="sidebar-balance-label" id="userBalanceNav" style="display:none;">
+        <i class="ri-wallet-3-fill"></i>
+        Balance: <span id="balanceAmount">$0.00</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="imei-check.html">IMEI Check</a>
+        <a href="add-funds.html">Add Funds</a>
+        <a href="order-history.html" class="active">Order History</a>
+        <a href="invoices.html">Invoices</a>
+        <button class="btn" id="profileBtnNav" style="margin-top:18px;">Profile</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div class="order-history-area">
+        <h2>Your IMEI Orders</h2>
+        <div class="orders-filter-bar">
+          <input type="text" id="filterImei" placeholder="Filter by IMEI..." autocomplete="off">
+          <select id="filterStatus">
+            <option value="">All Statuses</option>
+            <option value="completed">Completed</option>
+            <option value="pending">Pending</option>
+            <option value="failed">Failed</option>
+            <option value="partial">Partial</option>
+          </select>
+          <input type="text" id="filterService" placeholder="Filter Service...">
+          <input type="text" id="filterDate" placeholder="YYYY-MM-DD">
+        </div>
+        <div class="orders-table-wrapper">
+          <table class="orders-table" id="ordersTable">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Status</th>
+                <th>Service Name</th>
+                <th>IMEI</th>
+                <th>Result</th>
+                <th>Date</th>
+                <th>Price</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTableBody">
+              <tr><td colspan="7" class="orders-empty">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-bar" id="paginationBar"></div>
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    <div class="footer-links">
+      <a href="#">Terms of Service</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Contact</a>
+    </div>
+    <div>
+      &copy; 2025 IMEICHECK2.COM. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    // Username & balance (reuse logic)
+    async function getUserInfo() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const res = await fetch('/api/users/me', {
+          headers: {
+            Authorization: 'Bearer ' + token
+          }
+        });
+        if (!res.ok) return;
+
+        const user = await res.json();
+        if (user.username) {
+          document.getElementById('sidebarUsernameText').textContent = user.username;
+        }
+        if (typeof user.balance === 'number' || typeof user.balance === 'string') {
+          document.getElementById('userBalanceNav').style.display = '';
+          document.getElementById('balanceAmount').textContent =
+            '$' + Number(user.balance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+      } catch (e) {
+        document.getElementById('userBalanceNav').style.display = 'none';
+      }
+    }
+    getUserInfo();
+
+    // Profile nav button
+    document.getElementById('profileBtnNav').onclick = function() {
+      window.location.href = "clientarea.html#profile";
+    };
+
+    // ---- Orders Table Logic ----
+    let allOrders = [];
+    let currentPage = 1;
+    const resultsPerPage = 30;
+
+    async function fetchOrders() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        document.getElementById('ordersTableBody').innerHTML =
+          '<tr><td colspan="7" class="orders-empty">Login required</td></tr>';
+        return;
+      }
+      let response = await fetch('/api/imei-orders/me', {
+        headers: { Authorization: 'Bearer ' + token }
+      });
+      if (!response.ok) {
+        document.getElementById('ordersTableBody').innerHTML =
+          '<tr><td colspan="7" class="orders-empty">Could not load orders.</td></tr>';
+        return;
+      }
+      allOrders = await response.json();
+      currentPage = 1;
+      renderOrdersTable();
+      renderPagination();
+    }
+
+    function filterOrders() {
+      const imei = document.getElementById('filterImei').value.trim().toLowerCase();
+      const status = document.getElementById('filterStatus').value;
+      const service = document.getElementById('filterService').value.trim().toLowerCase();
+      const date = document.getElementById('filterDate').value.trim();
+
+      return allOrders.filter(order => {
+        let ok = true;
+        // IMEI puede ser array o string
+        let imeiVal = Array.isArray(order.imei) ? order.imei.join(', ') : order.imei || '';
+        if (imei && !(imeiVal).toLowerCase().includes(imei)) ok = false;
+        if (status && order.status !== status) ok = false;
+        if (service && !(order.service_name_at_order || '').toLowerCase().includes(service)) ok = false;
+        if (date && order.created_at && !order.created_at.startsWith(date)) ok = false;
+        return ok;
+      });
+    }
+
+    function renderOrdersTable() {
+      const filtered = filterOrders();
+      const tbody = document.getElementById('ordersTableBody');
+      // Paginación
+      const pageCount = Math.ceil(filtered.length / resultsPerPage);
+      if (currentPage > pageCount && pageCount > 0) currentPage = pageCount;
+      const start = (currentPage - 1) * resultsPerPage;
+      const end = start + resultsPerPage;
+      const paginated = filtered.slice(start, end);
+
+      if (!paginated.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="orders-empty">No orders found.</td></tr>';
+        renderPagination(pageCount);
+        return;
+      }
+
+      tbody.innerHTML = paginated.map(order => {
+        // IMEI puede ser string, array o string con []
+        let imeiStr = '';
+        try {
+          if (typeof order.imei === "string" && order.imei.startsWith("[")) {
+            imeiStr = JSON.parse(order.imei).join(', ');
+          } else if (Array.isArray(order.imei)) {
+            imeiStr = order.imei.join(', ');
+          } else {
+            imeiStr = order.imei || '';
+          }
+        } catch (e) {
+          imeiStr = order.imei || '';
+        }
+
+        // RESULT: si es JSON parseable, saca el texto bonito (primer api.result)
+        let resultText = '';
+        try {
+          let r = order.result;
+          if (typeof r === "string" && r.trim().startsWith("[")) {
+            r = JSON.parse(r);
+          }
+          if (Array.isArray(r) && r.length && r[0].api && typeof r[0].api.result === "string") {
+            resultText = r[0].api.result;
+          } else if (typeof r === "string") {
+            resultText = r;
+          }
+        } catch (e) {
+          resultText = typeof order.result === "string" ? order.result : "";
+        }
+
+        return `<tr>
+          <td>${order.order_id}</td>
+          <td><span class="status ${order.status}">${order.status.charAt(0).toUpperCase() + order.status.slice(1)}</span></td>
+          <td>${order.service_name_at_order || ''}</td>
+          <td>${imeiStr}</td>
+          <td><div class="order-result">${resultText}</div></td>
+          <td><span class="order-date">${order.created_at ? order.created_at.substring(0, 16).replace('T',' ') : ''}</span></td>
+          <td>$${order.price_used ? Number(order.price_used).toFixed(2) : '0.00'}</td>
+        </tr>`;
+      }).join('');
+      renderPagination(pageCount);
+    }
+
+    function renderPagination(pageCount) {
+      const filtered = filterOrders();
+      if (typeof pageCount !== "number") pageCount = Math.ceil(filtered.length / resultsPerPage);
+      const bar = document.getElementById('paginationBar');
+      if (pageCount <= 1) { bar.innerHTML = ""; return; }
+      let html = '';
+      html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(1)">« First</button>`;
+      html += `<button ${currentPage === 1 ? 'disabled' : ''} onclick="goPage(${currentPage-1})">‹ Prev</button>`;
+      // Mostrar máximo 5 páginas alrededor de la actual
+      let start = Math.max(1, currentPage - 2);
+      let end = Math.min(pageCount, currentPage + 2);
+      if (currentPage <= 3) end = Math.min(pageCount, 5);
+      if (currentPage >= pageCount - 2) start = Math.max(1, pageCount - 4);
+      for (let i = start; i <= end; i++) {
+        html += `<button class="${i === currentPage ? 'page-current' : ''}" onclick="goPage(${i})"${i===currentPage?' disabled':''}>${i}</button>`;
+      }
+      html += `<button ${currentPage === pageCount ? 'disabled' : ''} onclick="goPage(${currentPage+1})">Next ›</button>`;
+      html += `<button ${currentPage === pageCount ? 'disabled' : ''} onclick="goPage(${pageCount})">Last »</button>`;
+      bar.innerHTML = html;
+    }
+
+    window.goPage = function(page) {
+      currentPage = page;
+      renderOrdersTable();
+    };
+
+    document.getElementById('filterImei').addEventListener('input', () => {currentPage=1; renderOrdersTable();});
+    document.getElementById('filterStatus').addEventListener('change', () => {currentPage=1; renderOrdersTable();});
+    document.getElementById('filterService').addEventListener('input', () => {currentPage=1; renderOrdersTable();});
+    document.getElementById('filterDate').addEventListener('input', () => {currentPage=1; renderOrdersTable();});
+
+    fetchOrders();
+  </script>
+</body>
+</html>

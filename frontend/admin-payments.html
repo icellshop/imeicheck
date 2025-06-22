@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Payments - IMEICHECK2.COM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    body { background: #181a1b; color: #f4f4f4; font-family: 'Inter', Arial, sans-serif; min-height: 100vh; margin: 0; padding: 0;}
+    header { background: #181a1b; height: 80px; display: flex; align-items: center; justify-content: center; position: sticky; top: 0; z-index: 10;}
+    .header-inner { width: 100vw; display: flex; align-items: center; justify-content: center; position: relative; height: 80px;}
+    .header-title-center { flex: 1; display: flex; justify-content: center; align-items: center; position: absolute; left: 0; right: 0; top: 0; bottom: 0; pointer-events: none; z-index: 1;}
+    .logo-title { font-weight: 700; font-size: 2rem; letter-spacing: 1px; color: #fff; display: flex; align-items: center; gap: 8px; text-align: center; pointer-events: auto; text-decoration: none;}
+    .logo-title i { color: #7c3aed; font-size: 2.2rem; margin-right: 4px;}
+    .sidebar { width: 230px; min-width: 180px; background: #212325; height: 100vh; position: fixed; left: 0; top: 0; display: flex; flex-direction: column; align-items: stretch; box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18); z-index: 100; padding-top: 90px;}
+    .sidebar-username { margin: 0 0 16px 0; padding: 0 24px; font-size: 1.13rem; font-weight: 700; color: #fff; text-align: left; display: flex; align-items: center; gap: 9px; letter-spacing: 0.5px;}
+    .sidebar-username i { color: #7c3aed; font-size: 1.25em;}
+    .sidebar-nav { display: flex; flex-direction: column; gap: 8px; padding: 0 16px;}
+    .sidebar-nav a { color: #f4f4f4; opacity: .85; font-weight: 600; background: none; border: none; cursor: pointer; padding: 12px 16px; border-radius: 20px; font-family: inherit; transition: opacity .18s, color .18s, background .17s; font-size: 1.08rem; text-align: left; text-decoration: none !important; border-bottom: none !important; user-select: none;}
+    .sidebar-nav a:hover, .sidebar-nav a.active { opacity: 1; color: #7c3aed; background: #222437;}
+    .sidebar-nav .btn { margin-top: 18px; width: 100%; justify-content: center; font-size: 1.08rem; background: #e53935; color: #fff; border: none; border-radius: 20px; padding: 14px 0; font-weight: 700; box-shadow: 0 4px 32px 0 rgba(0,0,0,0.6); cursor: pointer; transition: background .2s;}
+    .sidebar-nav .btn:hover { background: #b71c1c; color: #fff;}
+    .main-content { margin-left: 230px; padding: 36px 24px; min-height: 100vh; background: #181a1b;}
+    @media (max-width: 900px) {.sidebar { width: 60px; min-width: 60px; }.sidebar-username { font-size: 1rem; padding: 0 6px; }.sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }.header-inner { padding: 0 8px; }.main-content { margin-left: 60px; }}
+    @media (max-width: 650px) {.sidebar { display: none; }.main-content { margin-left: 0; }.header-inner { flex-direction: column; gap: 6px; height: auto; }.header-title-center { position: static; } }
+    .admin-payments-header { font-size: 2rem; font-weight: 800; margin-bottom: 28px; text-align: left; color: #7c3aed;}
+    .manual-payment-form-container { background:#232437; border-radius:18px;box-shadow:0 4px 32px 0 rgba(0,0,0,0.2); max-width:440px; margin:24px auto 30px auto; padding:30px 32px;}
+    .manual-payment-form-container h2 { color:#7c3aed; margin-top:0; margin-bottom:24px;}
+    .manual-payment-form-container label {font-weight:600;}
+    .manual-payment-form-container input { width:100%;padding:10px 9px;border-radius:8px;border:none;background:#191b1d;color:#f4f4f4;font-size:1rem;margin-bottom:10px;}
+    .manual-payment-form-container button {width:100%;padding:12px 0;font-size:1.13rem;font-weight:700;background:#7c3aed;color:#fff;border:none;border-radius:11px;cursor:pointer;transition:background .15s;}
+    .manual-payment-form-container button:disabled {background:#4d3594;}
+    .manual-payment-form-container #manualPayMsg {margin-top:18px;font-weight:600;}
+    .payments-table-container {background:#222437; border-radius:20px; box-shadow:0 4px 32px 0 rgba(0,0,0,0.6); padding:22px 14px; margin-bottom:22px;overflow-x:auto;}
+    table.payments-table {width:100%; border-collapse:collapse; background:transparent; min-width:900px;}
+    table.payments-table th, table.payments-table td {padding:12px 12px; border:none; font-size:1.04rem; text-align:left;}
+    table.payments-table th {background:#282c45; color:#7c3aed; font-weight:700;}
+    table.payments-table td {color:#f4f4f4; border-bottom:1px solid #232437; vertical-align:middle;}
+    table.payments-table tr:last-child td {border-bottom:none;}
+    .loading-row td {text-align:center; color:#a7adc1; font-style:italic;}
+    .error-td {color:#e53935; font-weight:700;}
+    .success-msg {color:#43a047;}
+    .error-msg {color:#e53935;}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="admin.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-username" id="sidebarUsername">
+        <i class="ri-user-3-fill"></i>
+        <span id="sidebarUsernameText">Superadmin</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="admin.html">Dashboard</a>
+        <a href="admin-users.html">Users</a>
+        <a href="admin-services.html">Services</a>
+        <a href="admin-orders.html">Orders</a>
+        <a href="admin-payments.html" class="active">Payments</a>
+        <button class="btn" id="logoutBtn">Logout</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div class="admin-payments-header">Payments Management</div>
+      <div class="manual-payment-form-container">
+        <h2>Agregar pago manual</h2>
+        <form id="manualPaymentForm" autocomplete="off">
+          <label for="manualPayUser">Usuario (Email):</label>
+          <input type="text" id="manualPayUser" name="manualPayUser" required autocomplete="off" list="userEmailList">
+          <datalist id="userEmailList"></datalist>
+          <label for="manualPayAmount">Monto (USD):</label>
+          <input type="number" id="manualPayAmount" name="manualPayAmount" required min="0.01" step="0.01" placeholder="0.00">
+          <label for="manualPayRef">Referencia:</label>
+          <input type="text" id="manualPayRef" name="manualPayRef" required>
+          <button type="submit" id="manualPayBtn">Add Funds</button>
+          <div id="manualPayMsg"></div>
+        </form>
+      </div>
+      <div class="payments-table-container">
+        <table class="payments-table" id="paymentsTable">
+          <thead>
+            <tr>
+              <th>Payment ID</th>
+              <th>User Email</th>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Payment method</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="loading-row"><td colspan="6">Loading payments...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script>
+    // --- Superadmin access check ---
+    (async function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'landing-guest.html';
+        return;
+      }
+      try {
+        const res = await fetch('/api/users/me', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) {
+          window.location.href = 'landing-guest.html';
+          return;
+        }
+        const user = await res.json();
+        if (user.username) {
+          document.getElementById('sidebarUsernameText').textContent = user.username;
+        }
+        if (user.user_type !== 'superadmin' && user.user_type !== 'admin') {
+          window.location.href = 'landing-client.html';
+          return;
+        }
+      } catch (e) {
+        window.location.href = 'landing-guest.html';
+      }
+    })();
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = 'landing-guest.html';
+    };
+
+    // --- Autocompletar emails ---
+    let lastUserSearch = '';
+    document.getElementById('manualPayUser').addEventListener('input', async function() {
+      const val = this.value.trim();
+      if (val.length < 2 || val === lastUserSearch) return;
+      lastUserSearch = val;
+      const token = localStorage.getItem('token');
+      try {
+        const res = await fetch('/api/users/search?email=' + encodeURIComponent(val), {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!res.ok) return;
+        const users = await res.json();
+        const datalist = document.getElementById('userEmailList');
+        datalist.innerHTML = '';
+        users.forEach(u => {
+          if (u.email) {
+            const opt = document.createElement('option');
+            opt.value = u.email;
+            datalist.appendChild(opt);
+          }
+        });
+      } catch(e){}
+    });
+
+    // --- Add funds handler ---
+    document.getElementById('manualPaymentForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('manualPayUser').value.trim();
+      const amount = parseFloat(document.getElementById('manualPayAmount').value);
+      const reference = document.getElementById('manualPayRef').value.trim();
+      if (!email || !amount || !reference) {
+        document.getElementById('manualPayMsg').textContent = "Completa todos los campos.";
+        document.getElementById('manualPayMsg').className = "error-msg";
+        return;
+      }
+      if (!confirm(`¿Agregar $${amount.toFixed(2)} a ${email}?\nReferencia: ${reference}\n¿Estás seguro?`)) return;
+
+      const token = localStorage.getItem('token');
+      document.getElementById('manualPayBtn').disabled = true;
+      document.getElementById('manualPayMsg').textContent = "Procesando...";
+      document.getElementById('manualPayMsg').className = "";
+      try {
+        const res = await fetch('/api/payments/manual', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          },
+          body: JSON.stringify({ email, amount, reference })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          document.getElementById('manualPayMsg').className = "success-msg";
+          document.getElementById('manualPayMsg').textContent = "Pago manual agregado correctamente.";
+          this.reset();
+          fetchAndRenderPayments();
+        } else {
+          document.getElementById('manualPayMsg').className = "error-msg";
+          document.getElementById('manualPayMsg').textContent = data.error || "Error al agregar pago manual";
+        }
+      } catch(e) {
+        document.getElementById('manualPayMsg').className = "error-msg";
+        document.getElementById('manualPayMsg').textContent = "Error de conexión";
+      }
+      document.getElementById('manualPayBtn').disabled = false;
+    };
+
+    // --- Fetch and render all payments ---
+    async function fetchAndRenderPayments() {
+      const token = localStorage.getItem('token');
+      const tableBody = document.querySelector('#paymentsTable tbody');
+      tableBody.innerHTML = `<tr class="loading-row"><td colspan="6">Loading payments...</td></tr>`;
+
+      let payments = [];
+      try {
+        const res = await fetch('/api/payments/all', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Failed to fetch payments');
+        payments = await res.json();
+      } catch (e) {
+        tableBody.innerHTML = `<tr><td colspan="6" class="error-td">Error loading payments</td></tr>`;
+        return;
+      }
+
+      if (!payments.length) {
+        tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#a7adc1;">No payments found.</td></tr>`;
+        return;
+      }
+
+      tableBody.innerHTML = payments.map(payment => {
+        const date = payment.created_at ? new Date(payment.created_at).toLocaleString() : '';
+        return `
+          <tr>
+            <td>${payment.payment_id}</td>
+            <td>${payment.user_email || ''}</td>
+            <td>${date}</td>
+            <td>$${payment.amount != null ? parseFloat(payment.amount).toFixed(2) : ''}</td>
+            <td>${payment.payment_method || ''}</td>
+            <td>${payment.status || ''}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    fetchAndRenderPayments();
+  </script>
+</body>
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Funds - IMEICHECK2.COM</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #181a1b;
+      --secondary: #212325;
+      --accent: #1e88e5;
+      --accent-dark: #1a73e8;
+      --success: #43a047;
+      --success-dark: #388e3c;
+      --text: #f4f4f4;
+      --muted: #b0b0b0;
+      --btn: #1e88e5;
+      --btn-hover: #1565c0;
+      --radius: 16px;
+      --shadow: 0 2px 32px 0 rgba(0,0,0,0.6);
+      --danger: #e53935;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--primary);
+      color: var(--text);
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      height: 100%;
+      scroll-behavior: smooth;
+    }
+    body, #mainLayout {
+      height: 100vh;
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+    }
+    header {
+      width: 100vw;
+      background: var(--primary);
+      box-shadow: 0 0 0 0;
+      z-index: 10;
+      position: sticky;
+      top: 0;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header-inner {
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 80px;
+    }
+    .header-title-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .logo-title {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+    .logo-title i {
+      color: var(--accent);
+      font-size: 2.2rem;
+      margin-right: 4px;
+    }
+    .sidebar {
+      width: 230px;
+      min-width: 180px;
+      background: var(--secondary);
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18);
+      z-index: 100;
+      padding-top: 90px;
+    }
+    .sidebar-username {
+      margin: 0 0 16px 0;
+      padding: 0 24px;
+      font-size: 1.13rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-username i {
+      color: var(--accent);
+      font-size: 1.25em;
+    }
+    .sidebar-balance-label {
+      font-weight: 600;
+      color: var(--success);
+      background: var(--primary);
+      border-radius: var(--radius);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 1.07rem;
+      box-shadow: 0 1px 8px 0 rgba(34, 139, 34, 0.09);
+      margin: 0 24px 24px 24px;
+    }
+    .sidebar-balance-label i {
+      color: var(--success-dark);
+      font-size: 1.1em;
+    }
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 16px;
+    }
+    .sidebar-nav a {
+      color: var(--text);
+      opacity: .85;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      font-family: inherit;
+      transition: opacity .18s, color .18s, background .17s;
+      font-size: 1.08rem;
+      text-align: left;
+      text-decoration: none !important;
+      border-bottom: none !important;
+      user-select: none;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      opacity: 1;
+      color: var(--accent);
+      background: #20252a;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    .sidebar-nav .btn {
+      margin-top: 18px;
+      width: 100%;
+      justify-content: center;
+      font-size: 1.08rem;
+      background: var(--btn);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      padding: 14px 0;
+      font-weight: 700;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-block;
+    }
+    .sidebar-nav .btn:hover {
+      background: var(--btn-hover);
+      color: #fff;
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; min-width: 60px; }
+      .sidebar-username { font-size: 1rem; padding: 0 6px; }
+      .sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }
+      .header-inner { padding: 0 8px; }
+    }
+    @media (max-width: 650px) {
+      .sidebar { display: none; }
+      .header-inner { flex-direction: column; gap: 6px; height: auto; }
+      .header-title-center { position: static; }
+      .main-content { margin-left: 0 !important; }
+    }
+    .main-content {
+      margin-left: 230px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      width: calc(100vw - 230px);
+      box-sizing: border-box;
+    }
+    @media (max-width: 900px) {
+      .main-content {
+        margin-left: 60px;
+        width: calc(100vw - 60px);
+      }
+    }
+    @media (max-width: 650px) {
+      .main-content {
+        margin-left: 0;
+        width: 100vw;
+      }
+    }
+    #add-funds-section {
+      width: 100%;
+      max-width: 460px;
+      background: var(--secondary);
+      color: var(--text);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px 28px;
+      text-align: center;
+      margin: 60px auto 0 auto;
+      display: block;
+    }
+    #add-funds-section h2 {
+      margin-top: 0;
+      font-weight: 800;
+      margin-bottom: 18px;
+    }
+    .balance-label {
+      font-weight: 600;
+      color: var(--success);
+      background: var(--primary);
+      border-radius: var(--radius);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 1.07rem;
+      box-shadow: 0 1px 8px 0 rgba(34, 139, 34, 0.09);
+      margin: 0 0 18px 0;
+      justify-content: center;
+    }
+    .balance-label i {
+      color: var(--success-dark);
+      font-size: 1.1em;
+    }
+    #add-funds-section label {
+      display: block;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    #add-funds-section input[type="number"] {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      border: none;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      background: #191b1d;
+      color: #fff;
+      outline: none;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    #add-funds-section input[type="number"]:focus {
+      background: #23272a;
+    }
+    #commission-info {
+      margin:8px 0 4px 0;
+      color: var(--muted);
+      font-size: 0.97em;
+    }
+    #clabe-mexico {
+      display:none;
+      border:1px solid #239;
+      border-radius:10px;
+      padding:14px;
+      margin:14px 0;
+      background:#202240;
+    }
+    #clabe-mexico b, #clabe-mexico span {
+      color: #eaeaea;
+    }
+    #clabe-mexico .btn {
+      background:#25d366;
+      color:#191b1d;
+      margin-top:10px;
+      display:inline-block;
+    }
+    #clabe-mexico .btn:hover {
+      background:#1ebe57;
+      color:#fff;
+    }
+    #clabe-mexico .info-box {
+      font-size:0.93em;
+      color:#b0b0b0;
+      margin-top:5px;
+    }
+    #add-funds-section .btn {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border-radius: var(--radius);
+    }
+    #add-funds-section .btn i {
+      margin-right: 6px;
+      font-size: 1.2em;
+      vertical-align: -2px;
+    }
+    #payment-status-msg {
+      display: none;
+      margin-bottom: 18px;
+      font-size: 1.1em;
+      font-weight: 600;
+      border-radius: 7px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: all .2s;
+    }
+    #payment-status-msg.success {
+      background: #213b25;
+      color: #6aff7c;
+      border: 1.5px solid #43a047;
+    }
+    #payment-status-msg.fail {
+      background: #3b2121;
+      color: #ff6a6a;
+      border: 1.5px solid var(--danger);
+    }
+    footer {
+      background: #121212;
+      color: #888;
+      text-align: center;
+      padding: 32px 0 12px 0;
+      font-size: 1rem;
+      border-radius: var(--radius) var(--radius) 0 0;
+      margin-top: 56px;
+    }
+    .footer-links {
+      margin: 0 0 12px 0;
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      align-items: center;
+    }
+    .footer-links a {
+      color: #888;
+      font-size: 1.1rem;
+      opacity: .8;
+    }
+    .footer-links a:hover {
+      color: #fff;
+      opacity: 1;
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; min-width: 60px; }
+      .sidebar-username { font-size: 1rem; padding: 0 6px; }
+      .sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }
+      .header-inner { padding: 0 8px; }
+      .main-content { margin-left: 60px; width: calc(100vw - 60px);}
+    }
+    @media (max-width: 650px) {
+      .sidebar { display: none; }
+      .header-inner { flex-direction: column; gap: 6px; height: auto; }
+      .header-title-center { position: static; }
+      .main-content { margin-left: 0 !important; width: 100vw;}
+    }
+    @media (max-width: 600px) {
+      #add-funds-section {
+        padding: 18px 8px 18px 8px;
+        max-width: 95vw;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="landing-client.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-username" id="sidebarUsername">
+        <i class="ri-user-3-fill"></i>
+        <span id="sidebarUsernameText">Username</span>
+      </div>
+      <div class="sidebar-balance-label" id="userBalanceNav" style="display:none;">
+        <i class="ri-wallet-3-fill"></i>
+        Balance: <span id="balanceAmount">$0.00</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="imei-check.html">IMEI Check</a>
+        <a href="add-funds.html" class="active">Add Funds</a>
+        <a href="order-history.html">Order History</a>
+        <a href="invoices.html">Invoices</a>
+        <button class="btn" id="profileBtnNav" style="margin-top:18px;">Profile</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div id="add-funds-section">
+        <h2><i class="ri-bank-card-line"></i> Add Funds</h2>
+        <div id="payment-status-msg"></div>
+        <form id="add-funds-form" autocomplete="off">
+          <label for="funds-amount">Amount to recharge (USD):</label>
+          <input type="number" min="1" step="0.01" id="funds-amount" name="amount" placeholder="Enter amount" required>
+          <div id="commission-info">
+            Card payments have a <b>3.6% + $0.16 USD</b> commission, which will be added to your total.
+          </div>
+          <!-- CLABE transfer for Mexico only, shown dynamically -->
+          <div id="clabe-mexico">
+            <div>
+              <b>Bank Transfer (SPEI) - México</b><br>
+              <span>CLABE: <b>646180157003578915</b></span><br>
+              <span style="font-size:0.95em; color:#b0b0b0;">Bank: STP / iCellshop S.A. de C.V.</span>
+            </div>
+            <a id="whatsapp-link-mx" class="btn" target="_blank" href="">
+              <i class="ri-whatsapp-line"></i> Send Proof via WhatsApp
+            </a>
+            <div class="info-box">
+              After transfer, send your receipt to validate your balance!
+            </div>
+          </div>
+          <!-- Payment buttons -->
+          <div style="margin:18px 0 0 0; display:flex; flex-direction:column; gap:10px;">
+            <button type="button" id="pay-stripe-btn" class="btn" style="background:#635bff;">
+              <i class="ri-bank-card-line"></i> Pay with Stripe
+            </button>
+            <button type="button" id="pay-paypal-btn" class="btn" style="background:#ffc439; color:#202240;">
+              <i class="ri-paypal-line"></i> Pay with PayPal
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+  <footer>
+    <div class="footer-links">
+      <a href="#">Terms of Service</a>
+      <a href="#">Privacy Policy</a>
+      <a href="#">Contact</a>
+    </div>
+    <div>
+      &copy; 2025 IMEICHECK2.COM. All rights reserved.
+    </div>
+  </footer>
+  <script>
+    // Sidebar user info and balances
+    async function refreshUserBalance() {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch('/api/users/me', {
+          headers: { Authorization: 'Bearer ' + token }
+        });
+        if (!res.ok) return;
+        const user = await res.json();
+        if (user.username) {
+          document.getElementById('sidebarUsernameText').textContent = user.username;
+        }
+        if (typeof user.balance === 'number' || typeof user.balance === 'string') {
+          document.getElementById('userBalanceNav').style.display = '';
+          document.getElementById('balanceAmount').textContent =
+            '$' + Number(user.balance).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+      } catch (e) {
+        document.getElementById('userBalanceNav').style.display = 'none';
+      }
+    }
+    refreshUserBalance();
+
+    document.getElementById('profileBtnNav').onclick = function() {
+      window.location.href = "clientarea.html#profile";
+    };
+  </script>
+  <!-- Tu script JS original va aquí (no lo modifico por instrucción) -->
+  <script>
+    // (Pega aquí exactamente tu script funcional de lógica de pagos, polling, etc)
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Mostrar mensaje de pago exitoso o fallido si viene en la URL
+      const params = new URLSearchParams(window.location.search);
+      const paymentStatus = params.get('status') || params.get('funds');
+      const statusMsgDiv = document.getElementById('payment-status-msg');
+      const stripeSessionId = params.get('session_id');
+      const paymentAmount = params.get('amount');
+      statusMsgDiv.style.display = 'none';
+      statusMsgDiv.className = '';
+      if (paymentStatus === 'success' && stripeSessionId) {
+        try {
+     const res = await fetch(`/api/payments/by-session/${encodeURIComponent(stripeSessionId)}`);
+if (res.ok) {
+  const data = await res.json();
+  // Usa credited_amount si existe, sino fallback a amount
+  const credited = data.credited_amount != null ? parseFloat(data.credited_amount) : parseFloat(data.amount);
+  if (!isNaN(credited)) {
+    statusMsgDiv.textContent = `Payment successful, $${credited.toFixed(2)} have been added to your balance.`;
+  } else {
+    statusMsgDiv.textContent = `Payment successful! Funds have been added to your balance.`;
+  }
+  statusMsgDiv.className = 'success';
+  statusMsgDiv.style.display = 'block';
+} else {
+            statusMsgDiv.textContent = `Payment successful! Funds have been added to your balance.`;
+            statusMsgDiv.className = 'success';
+            statusMsgDiv.style.display = 'block';
+          }
+        } catch (err) {
+          statusMsgDiv.textContent = `Payment successful! Funds have been added to your balance.`;
+          statusMsgDiv.className = 'success';
+          statusMsgDiv.style.display = 'block';
+        }
+      } else if (paymentStatus === 'success' && paymentAmount) {
+        const amount = parseFloat(paymentAmount);
+        if (!isNaN(amount)) {
+          statusMsgDiv.textContent = `Payment successful, $${amount.toFixed(2)} have been added to your balance.`;
+        } else {
+          statusMsgDiv.textContent = `Payment successful! Funds have been added to your balance.`;
+        }
+        statusMsgDiv.className = 'success';
+        statusMsgDiv.style.display = 'block';
+      } else if (paymentStatus === 'fail') {
+        statusMsgDiv.textContent = 'Payment failed. Try again.';
+        statusMsgDiv.className = 'fail';
+        statusMsgDiv.style.display = 'block';
+      }
+      // Lógica dinámica por país
+      let userCountry = localStorage.getItem('country');
+      let userEmail = localStorage.getItem('email');
+      if(!userCountry && window.currentUser && window.currentUser.country) {
+        userCountry = window.currentUser.country;
+      }
+      if(!userEmail && window.currentUser && window.currentUser.email) {
+        userEmail = window.currentUser.email;
+      }
+      function updateCLABE() {
+        const div = document.getElementById('clabe-mexico');
+        if (
+          userCountry &&
+          userCountry.toLowerCase().includes('mexico')
+        ) {
+          div.style.display = '';
+          const amount = document.getElementById('funds-amount').value || '';
+          let waMsg = `Hi, I want to recharge $${amount || '[AMOUNT]'}, here is my proof of SPEI, please add the balance to my account, my email is: ${userEmail || '[your email]'}`;
+          let waUrl = `https://wa.me/5215612237406?text=${encodeURIComponent(waMsg)}`;
+          document.getElementById('whatsapp-link-mx').href = waUrl;
+        } else {
+          div.style.display = 'none';
+        }
+      }
+      document.getElementById('funds-amount').addEventListener('input', updateCLABE);
+      updateCLABE();
+      function calculateFinalAmount() {
+        const val = parseFloat(document.getElementById('funds-amount').value);
+        if (!val || val < 1) return null;
+        return +(val * 1.036 + 0.16).toFixed(2);
+      }
+      document.getElementById('pay-stripe-btn').onclick = async function() {
+        const amount = parseFloat(document.getElementById('funds-amount').value);
+        if (!amount || amount < 1) return alert('Enter a valid amount.');
+        const finalAmount = calculateFinalAmount();
+        const token = localStorage.getItem('token');
+        if (!token) {
+          alert('You must be logged in to add funds.');
+          window.location.href = "login.html";
+          return;
+        }
+        const res = await fetch('/api/payments/stripe-checkout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token
+          },
+          body: JSON.stringify({
+            amount: finalAmount,
+            original_amount: amount
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data && data.checkout_url) {
+          window.location = data.checkout_url;
+        } else {
+          alert('Stripe payment error: ' + (data.error || 'Unknown error'));
+        }
+      };
+      document.getElementById('pay-paypal-btn').onclick = async function() {
+        const amount = parseFloat(document.getElementById('funds-amount').value);
+        if (!amount || amount < 1) return alert('Enter a valid amount.');
+        const finalAmount = calculateFinalAmount();
+        const res = await fetch('/api/payments/paypal-checkout', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            amount: finalAmount,
+            original_amount: amount
+          })
+        });
+        const data = await res.json();
+        if (data && data.checkout_url) {
+          window.location = data.checkout_url;
+        } else {
+          alert('PayPal payment error: ' + (data.error || 'Unknown error'));
+        }
+      };
+    });
+  </script>
+</body>
+</html>

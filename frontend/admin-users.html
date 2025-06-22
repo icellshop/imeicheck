@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IMEICHECK2.COM - Admin Users</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Remixicon Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <style>
+    body {
+      background: #181a1b;
+      color: #f4f4f4;
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #181a1b;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-inner {
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      height: 80px;
+    }
+    .header-title-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .logo-title {
+      font-weight: 700;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+      pointer-events: auto;
+      text-decoration: none;
+    }
+    .logo-title i {
+      color: #7c3aed;
+      font-size: 2.2rem;
+      margin-right: 4px;
+    }
+    .sidebar {
+      width: 230px;
+      min-width: 180px;
+      background: #212325;
+      height: 100vh;
+      position: fixed;
+      left: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      box-shadow: 2px 0 12px 0 rgba(0,0,0,0.18);
+      z-index: 100;
+      padding-top: 90px;
+    }
+    .sidebar-username {
+      margin: 0 0 16px 0;
+      padding: 0 24px;
+      font-size: 1.13rem;
+      font-weight: 700;
+      color: #fff;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-username i {
+      color: #7c3aed;
+      font-size: 1.25em;
+    }
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 16px;
+    }
+    .sidebar-nav a {
+      color: #f4f4f4;
+      opacity: .85;
+      font-weight: 600;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      border-radius: 20px;
+      font-family: inherit;
+      transition: opacity .18s, color .18s, background .17s;
+      font-size: 1.08rem;
+      text-align: left;
+      text-decoration: none !important;
+      border-bottom: none !important;
+      user-select: none;
+    }
+    .sidebar-nav a:hover, .sidebar-nav a.active {
+      opacity: 1;
+      color: #7c3aed;
+      background: #222437;
+      text-decoration: none !important;
+      border-bottom: none !important;
+    }
+    .sidebar-nav .btn {
+      margin-top: 18px;
+      width: 100%;
+      justify-content: center;
+      font-size: 1.08rem;
+      background: #e53935;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 14px 0;
+      font-weight: 700;
+      box-shadow: 0 4px 32px 0 rgba(0,0,0,0.6);
+      cursor: pointer;
+      transition: background .2s;
+      display: inline-block;
+    }
+    .sidebar-nav .btn:hover {
+      background: #b71c1c;
+      color: #fff;
+    }
+    .main-content {
+      margin-left: 230px;
+      padding: 36px 24px;
+      min-height: 100vh;
+      background: #181a1b;
+    }
+    @media (max-width: 900px) {
+      .sidebar { width: 60px; min-width: 60px; }
+      .sidebar-username { font-size: 1rem; padding: 0 6px; }
+      .sidebar-nav a, .sidebar-nav .btn { font-size: .96rem; padding: 10px 9px; }
+      .header-inner { padding: 0 8px; }
+      .main-content { margin-left: 60px; }
+    }
+    @media (max-width: 650px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; }
+      .header-inner { flex-direction: column; gap: 6px; height: auto; }
+      .header-title-center { position: static; }
+    }
+    .admin-users-header {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 28px;
+      text-align: left;
+      color: #7c3aed;
+    }
+    .users-table-container {
+      background: #222437;
+      border-radius: 20px;
+      box-shadow: 0 4px 32px 0 rgba(0,0,0,0.6);
+      padding: 22px 14px;
+      margin-bottom: 22px;
+      overflow-x: auto;
+    }
+    table.users-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: transparent;
+      min-width: 1100px;
+    }
+    table.users-table th, table.users-table td {
+      padding: 12px 12px;
+      border: none;
+      font-size: 1.04rem;
+      text-align: left;
+    }
+    table.users-table th {
+      background: #282c45;
+      color: #7c3aed;
+      font-weight: 700;
+    }
+    table.users-table td {
+      color: #f4f4f4;
+      border-bottom: 1px solid #232437;
+      vertical-align: middle;
+    }
+    table.users-table tr:last-child td {
+      border-bottom: none;
+    }
+    .user-type-select {
+      background: #232437;
+      color: #f4f4f4;
+      border-radius: 7px;
+      border: 1px solid #333;
+      padding: 4px 8px;
+      font-size: 1rem;
+    }
+    .update-btn {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 7px 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.17s;
+      margin-left: 8px;
+      font-size: 1.01rem;
+    }
+    .update-btn:hover {
+      background: #6d28d9;
+    }
+    .loading-row td {
+      text-align: center;
+      color: #a7adc1;
+      font-style: italic;
+    }
+    .success-td {
+      color: #43a047;
+      font-weight: 700;
+    }
+    .error-td {
+      color: #e53935;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="header-title-center">
+        <a class="logo-title" href="admin.html">
+          <i class="ri-shield-check-fill"></i> IMEICHECK2.COM
+        </a>
+      </div>
+    </div>
+  </header>
+  <div id="mainLayout" style="display:flex; min-height:100vh;">
+    <aside class="sidebar">
+      <div class="sidebar-username" id="sidebarUsername">
+        <i class="ri-user-3-fill"></i>
+        <span id="sidebarUsernameText">Superadmin</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="admin.html">Dashboard</a>
+        <a href="admin-users.html" class="active">Users</a>
+        <a href="admin-services.html">Services</a>
+        <a href="admin-orders.html">Orders</a>
+        <a href="admin-payments.html">Payments</a>
+        <button class="btn" id="logoutBtn">Logout</button>
+      </nav>
+    </aside>
+    <main class="main-content">
+      <div class="admin-users-header">User Management</div>
+      <div class="users-table-container">
+        <table class="users-table" id="usersTable">
+          <thead>
+            <tr>
+              <th>User ID</th>
+              <th>Email</th>
+              <th>Country</th>
+              <th>Creation Date</th>
+              <th>Payments (approved)</th>
+              <th>Orders (completed / $)</th>
+              <th>User Type</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="loading-row"><td colspan="8">Loading users...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script>
+    // --- Superadmin access check ---
+    (async function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'landing-guest.html';
+        return;
+      }
+      try {
+        const res = await fetch('/api/users/me', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) {
+          window.location.href = 'landing-guest.html';
+          return;
+        }
+        const user = await res.json();
+        if (user.username) {
+          document.getElementById('sidebarUsernameText').textContent = user.username;
+        }
+        if (user.user_type !== 'superadmin') {
+          window.location.href = 'landing-client.html';
+          return;
+        }
+      } catch (e) {
+        window.location.href = 'landing-guest.html';
+      }
+    })();
+
+    // Logout
+    document.getElementById('logoutBtn').onclick = function() {
+      localStorage.removeItem('token');
+      window.location.href = 'landing-guest.html';
+    };
+
+    // --- User Types (could be fetched from backend if needed) ---
+    const USER_TYPES = ['guest', 'registered', 'premium', 'pro', 'admin', 'superadmin'];
+
+    // --- Fetch and render users ---
+    async function fetchAndRenderUsers() {
+      const token = localStorage.getItem('token');
+      const tableBody = document.querySelector('#usersTable tbody');
+      tableBody.innerHTML = `<tr class="loading-row"><td colspan="8">Loading users...</td></tr>`;
+
+      // Fetch users with stats from backend
+      let users = [];
+      try {
+        const res = await fetch('/api/users/admin-list', { headers: { Authorization: 'Bearer ' + token } });
+        if (!res.ok) throw new Error('Failed to fetch users');
+        users = await res.json();
+      } catch (e) {
+        tableBody.innerHTML = `<tr><td colspan="8" class="error-td">Error loading users</td></tr>`;
+        return;
+      }
+
+      if (!users.length) {
+        tableBody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#a7adc1;">No users found.</td></tr>`;
+        return;
+      }
+
+      // Render table rows
+      tableBody.innerHTML = users.map(user => {
+        const creationDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : '';
+        return `
+          <tr data-userid="${user.user_id}">
+            <td>${user.user_id}</td>
+            <td>${user.email || ''}</td>
+            <td>${user.country || ''}</td>
+            <td>${creationDate}</td>
+            <td>${user.total_payments ?? 0} - $${parseFloat(user.total_payments_amount ?? 0).toFixed(2)}</td>
+            <td>${user.completed_orders ?? 0} - $${parseFloat(user.completed_orders_amount ?? 0).toFixed(2)}</td>
+            <td>
+              <select class="user-type-select">
+                ${USER_TYPES.map(type => `<option value="${type}" ${type === user.user_type ? 'selected' : ''}>${type}</option>`).join('')}
+              </select>
+            </td>
+            <td>
+              <button class="update-btn">Update</button>
+              <span class="update-status"></span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Add event listeners for update
+      tableBody.querySelectorAll('.update-btn').forEach(btn => {
+        btn.onclick = async function() {
+          const tr = btn.closest('tr');
+          const userId = tr.getAttribute('data-userid');
+          const select = tr.querySelector('.user-type-select');
+          const statusSpan = tr.querySelector('.update-status');
+          const newType = select.value;
+          btn.disabled = true;
+          statusSpan.textContent = '...';
+          try {
+            const response = await fetch(`/api/users/${userId}/update-type`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + localStorage.getItem('token')
+              },
+              body: JSON.stringify({ user_type: newType })
+            });
+            if (response.ok) {
+              statusSpan.textContent = '✔';
+              statusSpan.className = 'update-status success-td';
+              setTimeout(() => statusSpan.textContent = '', 2000);
+            } else {
+              statusSpan.textContent = '✖';
+              statusSpan.className = 'update-status error-td';
+              setTimeout(() => statusSpan.textContent = '', 2000);
+            }
+          } catch (e) {
+            statusSpan.textContent = '✖';
+            statusSpan.className = 'update-status error-td';
+            setTimeout(() => statusSpan.textContent = '', 2000);
+          }
+          btn.disabled = false;
+        };
+      });
+    }
+
+    fetchAndRenderUsers();
+  </script>
+</body>
+</html>
