@@ -7,11 +7,28 @@ dotenv.config();
 
 const app = express();
 
-// ======== CONFIGURA ORIGEN CORS USANDO VARIABLE DE ENTORNO ========
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://imeicheck2.com';
+// ======== CONFIGURA ORIGEN CORS CON MÚLTIPLES DOMINIOS ========
+const FRONTEND_URLS = [
+  'https://imeicheckfrontend.onrender.com',
+  'https://imeicheck2.com',
+  'https://www.imeicheck2.com',
+  process.env.FRONTEND_URL,
+]
+  .filter(Boolean); // quita undefined si FRONTEND_URL no está seteada
+
 app.use(
   cors({
-    origin: FRONTEND_URL,
+    origin: function (origin, callback) {
+      // Permite requests sin origin (como herramientas de backend o curl)
+      if (!origin) return callback(null, true);
+      if (FRONTEND_URLS.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(
+        new Error(`No permitido por CORS. Origin: ${origin}`),
+        false
+      );
+    },
     credentials: true,
   })
 );
@@ -67,7 +84,7 @@ const PORT = process.env.PORT || 8080;
     await sequelize.sync();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
-      console.log(`CORS allowed origin: ${FRONTEND_URL}`);
+      console.log(`CORS allowed origins: ${FRONTEND_URLS.join(', ')}`);
     });
   } catch (err) {
     console.error('Database connection error:', err);
