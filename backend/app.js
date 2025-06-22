@@ -8,7 +8,7 @@ dotenv.config();
 const app = express();
 
 // ======== CONFIGURA ORIGEN CORS USANDO VARIABLE DE ENTORNO ========
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://imeicheckfrontend.onrender.com';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://imeicheck2.com';
 app.use(
   cors({
     origin: FRONTEND_URL,
