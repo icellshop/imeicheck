@@ -112,43 +112,28 @@ exports.createOrder = async (req, res) => {
     }
 
     // Notificación por mail si corresponde
-if (['completed', 'partial'].includes(newOrder.status)) {
-  let emailTo = newOrder.guest_email;
-  if (!emailTo && newOrder.user_id) {
-    const user = await User.findByPk(newOrder.user_id);
-    emailTo = user ? user.email : null;
-  }
-  if (emailTo) {
-    // Suponiendo que imeisArr es un array de objetos con campos similares al JSON que pegaste antes
-    const imeiObj = imeisArr[0] || {};
-    const imei = imeiObj.imei || newOrder.imei || '';
-    const modelo = imeiObj.api?.object?.model || 'Desconocido';
-    const fmiStatus = imeiObj.api?.object?.fmiOn === false ? 'OFF' : 'ON';
-    const status = newOrder.status || 'Desconocido';
-    const resultado = imeiObj.api?.result || imeiObj.result || newOrder.result || 'Sin resultado';
-
-    const subject = `Resultado de tu orden IMEI [${imei}]`;
-
-    const html = `
-      <h2>¡Aquí está el resultado de tu consulta IMEI!</h2>
-      <ul>
-        <li><strong>Modelo:</strong> ${modelo}</li>
-        <li><strong>IMEI:</strong> ${imei}</li>
-        <li><strong>Find My iPhone:</strong> ${fmiStatus}</li>
-        <li><strong>Estado de la orden:</strong> ${status}</li>
-      </ul>
-      <pre style="background:#f6f6f6;padding:1em;border-radius:5px;">${resultado}</pre>
-      <p>Gracias por usar nuestro servicio.</p>
-    `;
-
-    await sendMail({
-      to: emailTo,
-      subject,
-      html,
-      type: null // No uses 'order_result' así forzamos tu subject y html
-    });
-  }
-}
+    if (['completed', 'partial'].includes(newOrder.status)) {
+      let emailTo = newOrder.guest_email;
+      if (!emailTo && newOrder.user_id) {
+        const user = await User.findByPk(newOrder.user_id);
+        emailTo = user ? user.email : null;
+      }
+      if (emailTo) {
+        // Tomar el primer resultado relevante para el correo
+        let resultArr = [];
+        try { resultArr = JSON.parse(newOrder.result); } catch (e) {}
+        const firstResult = Array.isArray(resultArr) && resultArr[0] ? resultArr[0] : {};
+        await sendMail({
+          to: emailTo,
+          type: 'order_result',
+          data: {
+            result: firstResult.api?.result || firstResult.result || '',
+            imei: firstResult.imei || (Array.isArray(imeisArr) ? imeisArr[0] : newOrder.imei),
+            service: newOrder.service_name_at_order
+          }
+        });
+      }
+    }
 
     res.status(201).json(clientResults);
   } catch (error) {
@@ -186,14 +171,16 @@ exports.updateOrderStatus = async (req, res) => {
       }
       const service = await Service.findByPk(order.service_id);
       if (emailTo) {
+        // Tomar el primer IMEI de la orden para el email
+        let imeiArr = [];
+        try { imeiArr = JSON.parse(order.imei); } catch (e) {}
+        const imei = Array.isArray(imeiArr) && imeiArr[0] ? imeiArr[0] : order.imei;
         await sendMail({
           to: emailTo,
           type: 'order_result',
           data: {
             result: order.result,
-            imeis: (() => {
-              try { return JSON.parse(order.imei); } catch { return [order.imei]; }
-            })(),
+            imei,
             service: service ? service.service_name : order.service_name_at_order
           }
         });
@@ -297,7 +284,7 @@ exports.adminList = async (req, res) => {
         'user_type_at_order',
         'guest_email',
         'service_name_at_order',
-        'imei' // asegúrate que este campo existe
+        'imei'
       ],
       include: [
         {
