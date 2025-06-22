@@ -13,8 +13,7 @@ const FRONTEND_URLS = [
   'https://imeicheck2.com',
   'https://www.imeicheck2.com',
   process.env.FRONTEND_URL,
-]
-  .filter(Boolean); // quita undefined si FRONTEND_URL no está seteada
+].filter(Boolean); // quita undefined si FRONTEND_URL no está seteada
 
 app.use(
   cors({
