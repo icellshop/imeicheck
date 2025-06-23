@@ -147,6 +147,7 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
 };
 
 exports.stripeWebhook = async (req, res) => {
+  console.log('===> Stripe webhook recibido:', req.headers, req.body);
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const sig = req.headers['stripe-signature'];
 
