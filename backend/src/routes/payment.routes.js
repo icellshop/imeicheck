@@ -4,6 +4,13 @@ const paymentController = require('../controllers/payment.controller');
 const auth = require('../middleware/auth');
 const onlyAdmin = require('../middleware/onlyAdmin');
 
+// Stripe Webhook (DEBE IR ANTES DE express.json en app.js o aquí con raw body)
+router.post(
+  '/stripe-webhook',
+  express.raw({ type: 'application/json' }),
+  paymentController.stripeWebhook
+);
+
 // Crear sesión de Stripe Checkout para recarga de saldo
 router.post('/stripe-checkout', auth, paymentController.createStripeCheckoutSession);
 
@@ -20,7 +27,7 @@ router.post('/manual', auth, onlyAdmin, paymentController.createManualPayment);
 router.get('/my', auth, paymentController.getMyPayments);
 
 // TODOS los pagos (admin)
-router.get('/all', auth, onlyAdmin, paymentController.getAllPayments); // <--- ESTA ES LA CORRECTA
+router.get('/all', auth, onlyAdmin, paymentController.getAllPayments);
 
 // Obtener pago por ID (admin/superadmin)
 router.get('/:id', auth, onlyAdmin, paymentController.getPaymentById);

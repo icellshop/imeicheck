@@ -159,6 +159,7 @@ exports.stripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // Procesa checkout.session.completed (flujo principal actual)
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     const metadata = session.metadata || {};
@@ -312,7 +313,176 @@ exports.stripeWebhook = async (req, res) => {
         console.error('Error procesando pago Stripe en webhook:', err);
       }
     }
+    return res.status(200).end();
   }
+
+  // Procesa payment_intent.succeeded (soporte directo para PaymentIntent)
+  if (event.type === 'payment_intent.succeeded') {
+    const intent = event.data.object;
+    const metadata = intent.metadata || {};
+    const payment_intent_id = intent.id;
+
+    // Evita duplicados si ya existe un Payment con este intent
+    const existing = await Payment.findOne({ where: { stripe_payment_intent_id: payment_intent_id } });
+    if (existing) {
+      return res.status(200).end();
+    }
+
+    // Si viene de un IMEI order
+    if (metadata.imei && metadata.service_id) {
+      const imei = metadata.imei;
+      const service_id = metadata.service_id;
+      const user_id = metadata.user_id ? Number(metadata.user_id) : 999;
+      const user_type = metadata.user_type || 'guest';
+      const username = metadata.username || 'guest';
+      const guest_email = metadata.email || null;
+
+      try {
+        const service = await Service.findByPk(service_id);
+        if (!service) {
+          return res.status(200).end();
+        }
+        const price = user_type === 'guest' ? service.price_guest : service.price_registered;
+
+        const imeiOrder = await ImeiOrder.create({
+          user_id,
+          imei,
+          service_id,
+          status: 'pending',
+          result: null,
+          guest_email,
+          price_used: price,
+          user_type_at_order: user_type,
+          service_name_at_order: service.service_name,
+          currency: intent.currency || 'usd',
+          ip_address: intent.client_reference_id || null,
+          payment_intent_id: payment_intent_id,
+        });
+
+        await Payment.create({
+          order_id: imeiOrder.order_id,
+          user_id,
+          amount: price,
+          currency: intent.currency || 'usd',
+          status: 'approved',
+          payment_method: 'stripe',
+          payment_reference: 'stripe_payment_intent_imei',
+          stripe_payment_intent_id: payment_intent_id,
+          error_message: null,
+        });
+
+        try {
+          const payload = {
+            key: process.env.IMEI_API_KEY,
+            imei: imei,
+            service: service_id,
+          };
+          const apiRes = await fetch(process.env.IMEI_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const apiData = await apiRes.json();
+
+          const resultClean = typeof apiData.result === 'string'
+            ? cleanImeiResult(apiData.result)
+            : JSON.stringify(apiData.result);
+
+          imeiOrder.result = resultClean;
+          imeiOrder.status = (apiData.success === true || apiData.status === 'success') ? 'completed' : 'failed';
+          await imeiOrder.save();
+
+          // No hay session_id, así que no hay cache de html temporal aquí
+
+          if (guest_email && imeiOrder.status === 'completed' && apiData.result) {
+            await sendMail({
+              to: guest_email,
+              type: 'imei_paid_guest',
+              data: {
+                imei,
+                service: service.service_name,
+                price,
+                currency: intent.currency || 'usd',
+                result: apiData.result
+              }
+            });
+          }
+
+        } catch (apiErr) {
+          imeiOrder.status = 'failed';
+          imeiOrder.result = JSON.stringify({ error: 'No se pudo contactar la API externa', detail: apiErr.message });
+          await imeiOrder.save();
+        }
+
+      } catch (err) {
+        console.error('Error procesando payment_intent.succeeded IMEI:', err);
+      }
+      return res.status(200).end();
+    }
+
+    // Si es recarga de saldo
+    if (metadata.user_id) {
+      const user_id = metadata.user_id;
+      const amount = metadata.recharge_amount
+        ? Number(metadata.recharge_amount)
+        : (Number(intent.amount_received) / 100);
+      const creditedAmount = metadata.original_amount
+        ? Number(metadata.original_amount)
+        : amount;
+      const currency = intent.currency || 'usd';
+
+      try {
+        const user = await User.findByPk(user_id);
+        if (!user) {
+          return res.status(200).end();
+        }
+
+        const balance_before = Number(user.balance) || 0;
+        user.balance = balance_before + creditedAmount;
+        await user.save();
+
+        await Payment.create({
+          user_id,
+          amount,
+          credited_amount: creditedAmount,
+          currency,
+          payment_method: 'stripe',
+          status: 'approved',
+          payment_reference: 'stripe_payment_intent',
+          stripe_payment_intent_id: payment_intent_id,
+          balance_before,
+          balance_after: user.balance,
+        });
+
+        await sendMail({
+          to: user.email,
+          type: 'balance_recharge',
+          data: { amount: creditedAmount, currency, balance: user.balance }
+        });
+      } catch (err) {
+        console.error('Error procesando payment_intent.succeeded recarga:', err);
+      }
+      return res.status(200).end();
+    }
+
+    // Otros casos: simplemente marca el payment como recibido, aunque no puedas asociarlo a usuario/orden
+    try {
+      await Payment.create({
+        amount: Number(intent.amount_received) / 100,
+        currency: intent.currency || 'usd',
+        status: 'approved',
+        payment_method: 'stripe',
+        payment_reference: 'stripe_payment_intent',
+        stripe_payment_intent_id: payment_intent_id,
+        error_message: null,
+      });
+    } catch (err) {
+      console.error('Error procesando payment_intent.succeeded genérico:', err);
+    }
+    return res.status(200).end();
+  }
+
+  // Otros eventos: solo responde 200 OK.
   res.status(200).end();
 };
 
