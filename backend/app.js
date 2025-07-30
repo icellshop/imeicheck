@@ -81,7 +81,7 @@ app.get('/profile',     (req, res) => res.sendFile(path.join(__dirname, 'public'
 
 // =========== ENDPOINT RAÍZ PARA RENDER/API ===========
 app.get('/', (req, res) => {
-  res.send('API imeicheck funcionando');
+  res.send('API imeicheck funcionando OK');
 });
 
 // =========== 404 HANDLER ===========
