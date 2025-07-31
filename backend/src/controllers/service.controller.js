@@ -1,4 +1,5 @@
 const { Service } = require('../models');
+const XLSX = require('xlsx');
 
 // Obtener todos los servicios
 exports.getAllServices = async (req, res) => {
@@ -117,5 +118,35 @@ exports.bulkUpdate = async (req, res) => {
     res.json({ updated: ok, failed: fail, errors });
   } catch (e) {
     res.status(500).json({ error: 'Error en actualización masiva', details: e.message });
+  }
+};
+
+// Crear servicios en bulk desde un archivo Excel
+exports.bulkCreateFromExcel = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No se subió ningún archivo' });
+  }
+  try {
+    // Leer el archivo Excel desde buffer
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    // Convertir la hoja a JSON (array de objetos)
+    const services = XLSX.utils.sheet_to_json(worksheet);
+
+    if (!services.length) {
+      return res.status(400).json({ error: 'El archivo no tiene datos' });
+    }
+
+    // Crear en bulk
+    const created = await Service.bulkCreate(services, { validate: true });
+
+    res.status(201).json({
+      message: `Se crearon ${created.length} servicios`,
+      services: created,
+    });
+  } catch (error) {
+    console.error('Error al crear servicios desde Excel:', error);
+    res.status(500).json({ error: 'Error procesando el archivo' });
   }
 };
