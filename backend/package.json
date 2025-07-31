@@ -21,7 +21,7 @@
     "pg": "^8.16.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
-    "stripe": "^18.2.1"
+    "stripe": "^18.2.1",
      "xlsx": "^0.18.5"     // <-- línea agregada
   },
   "devDependencies": {
