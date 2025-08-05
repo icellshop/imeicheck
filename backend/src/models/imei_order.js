@@ -1,6 +1,6 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/db');
-const User = require('./user'); // Importa el modelo User para la asociación
+const User = require('./user');
 
 const ImeiOrder = sequelize.define('ImeiOrder', {
   order_id: {
@@ -26,7 +26,7 @@ const ImeiOrder = sequelize.define('ImeiOrder', {
     defaultValue: 'pending',
   },
   result: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT, // Cambiado de STRING a TEXT para resultados largos
     allowNull: true,
   },
   guest_email: {
@@ -56,6 +56,15 @@ const ImeiOrder = sequelize.define('ImeiOrder', {
   payment_intent_id: {
     type: DataTypes.STRING,
     allowNull: true,
+  },
+  created_at: {
+    type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW
+  },
+  updated_at: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'imei_orders',

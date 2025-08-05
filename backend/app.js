@@ -8,13 +8,17 @@ dotenv.config();
 
 const app = express();
 
-// ======== CONFIGURA ORIGEN CORS CON MÚLTIPLES DOMINIOS ========
+// =========== CONFIGURA ORIGEN CORS CON MÚLTIPLES DOMINIOS ===========
 const FRONTEND_URLS = [
   'https://imeicheckfrontend.onrender.com',
   'https://imeicheck2.com',
   'https://www.imeicheck2.com',
   process.env.FRONTEND_URL,
-].filter(Boolean); // quita undefined si FRONTEND_URL no está seteada
+  'http://localhost:3000', // Para desarrollo local React/Vue/Next
+  'http://127.0.0.1:3000',
+  'http://localhost:5173', // Para Vite
+  'http://127.0.0.1:5173'
+].filter(Boolean);
 
 app.use(
   cors({
