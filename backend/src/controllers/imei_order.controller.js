@@ -81,22 +81,32 @@ exports.createOrder = async (req, res) => {
           imei: oneImei,
           service: service_id
         };
-        const apiRes = await fetch(process.env.IMEI_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        const apiData = await apiRes.json();
-        apiResults.push({
-          imei: oneImei,
-          api: apiData,
-          status: apiData.success === true || apiData.status === 'success' ? 'completed' : 'failed'
-        });
-        clientApiResults.push({
-          imei: oneImei,
-          api: { result: apiData.result },
-          status: apiData.success === true || apiData.status === 'success' ? 'completed' : 'failed'
-        });
+        try {
+          const apiRes = await fetch(process.env.IMEI_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const apiData = await apiRes.json();
+          apiResults.push({
+            imei: oneImei,
+            api: apiData,
+            status: apiData.success === true || apiData.status === 'success' ? 'completed' : 'failed'
+          });
+          clientApiResults.push({
+            imei: oneImei,
+            api: { result: apiData.result },
+            status: apiData.success === true || apiData.status === 'success' ? 'completed' : 'failed'
+          });
+        } catch (fetchErr) {
+          console.error('Error al contactar API externa:', fetchErr);
+          clientApiResults.push({
+            imei: oneImei,
+            api: { result: null },
+            status: 'failed',
+            error: 'No se pudo contactar la API externa: ' + (fetchErr.message || fetchErr.toString())
+          });
+        }
       }
       newOrder.result = JSON.stringify(apiResults);
       const allOk = apiResults.every(r => r.status === 'completed');
@@ -108,7 +118,12 @@ exports.createOrder = async (req, res) => {
       newOrder.result = JSON.stringify({ error: 'No se pudo contactar la API externa', detail: fetchErr.message });
       newOrder.status = 'failed';
       await newOrder.save();
-      clientResults = [{ error: 'No se pudo contactar la API externa' }];
+      clientResults = imeisArr.map(i => ({
+        imei: i,
+        api: { result: null },
+        status: 'failed',
+        error: 'No se pudo contactar la API externa: ' + (fetchErr.message || fetchErr.toString())
+      }));
     }
 
     // Notificación por mail si corresponde

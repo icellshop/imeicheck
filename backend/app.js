@@ -11,7 +11,6 @@ const app = express();
 // ======== CONFIGURA ORIGEN CORS CON MÚLTIPLES DOMINIOS ========
 const FRONTEND_URLS = [
   'https://imeicheckfrontend.onrender.com',
-  'https://imeicheck-41j1.onrender.com',
   'https://imeicheck2.com',
   'https://www.imeicheck2.com',
   process.env.FRONTEND_URL,
