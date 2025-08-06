@@ -74,7 +74,4 @@ const ImeiOrder = sequelize.define('ImeiOrder', {
   underscored: true,
 });
 
-// Asociación: una orden pertenece a un usuario
-ImeiOrder.belongsTo(User, { foreignKey: 'user_id', as: 'User' });
-
 module.exports = ImeiOrder;
