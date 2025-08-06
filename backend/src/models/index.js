@@ -5,7 +5,7 @@ const Payment = require('./payment');
 
 // Asociaciones principales
 User.hasMany(ImeiOrder, { foreignKey: 'user_id' });
-ImeiOrder.belongsTo(User, { foreignKey: 'user_id' });
+ImeiOrder.belongsTo(User, { foreignKey: 'user_id', as: 'User' }); // <--- usa el alias
 
 User.hasMany(Payment, { foreignKey: 'user_id' });
 Payment.belongsTo(User, { foreignKey: 'user_id' });

@@ -304,6 +304,7 @@ exports.adminList = async (req, res) => {
       include: [
         {
           model: User,
+          as: 'User',
           attributes: ['email'],
           required: false
         }
