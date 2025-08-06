@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/db');
-const User = require('./user');
 
 const ImeiOrder = sequelize.define('ImeiOrder', {
   order_id: {
@@ -13,7 +12,7 @@ const ImeiOrder = sequelize.define('ImeiOrder', {
     allowNull: true,
   },
   imei: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING, // Si quieres guardar muchos IMEIs como JSON, puedes cambiar a DataTypes.TEXT
     allowNull: false,
   },
   service_id: {
@@ -26,7 +25,7 @@ const ImeiOrder = sequelize.define('ImeiOrder', {
     defaultValue: 'pending',
   },
   result: {
-    type: DataTypes.TEXT, // Cambiado de STRING a TEXT para resultados largos
+    type: DataTypes.TEXT,
     allowNull: true,
   },
   guest_email: {
@@ -34,7 +33,7 @@ const ImeiOrder = sequelize.define('ImeiOrder', {
     allowNull: true,
   },
   price_used: {
-    type: DataTypes.DECIMAL,
+    type: DataTypes.DECIMAL(10, 2),
     allowNull: true,
   },
   user_type_at_order: {
@@ -73,5 +72,7 @@ const ImeiOrder = sequelize.define('ImeiOrder', {
   updatedAt: 'updated_at',
   underscored: true,
 });
+
+// No pongas asociaciones aquí
 
 module.exports = ImeiOrder;

@@ -3,9 +3,10 @@ const Service = require('./service');
 const ImeiOrder = require('./imei_order');
 const Payment = require('./payment');
 
-// Asociaciones principales
+// Todas las asociaciones van aquí:
+
 User.hasMany(ImeiOrder, { foreignKey: 'user_id' });
-ImeiOrder.belongsTo(User, { foreignKey: 'user_id', as: 'User' }); // <--- usa el alias
+ImeiOrder.belongsTo(User, { foreignKey: 'user_id', as: 'User' }); // Usamos alias 'User'
 
 User.hasMany(Payment, { foreignKey: 'user_id' });
 Payment.belongsTo(User, { foreignKey: 'user_id' });
