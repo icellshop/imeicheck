@@ -28,6 +28,7 @@ router.put('/:id/update-type', auth, onlyAdmin, userController.updateType);
 
 // Perfil propio (accesible para cualquier usuario autenticado)
 router.get('/me', auth, userController.me);
+router.put('/me', auth, userController.updateMe);
 
 // Admin/superadmin: gestiona usuarios
 router.get('/', auth, onlyAdmin, userController.getAllUsers);

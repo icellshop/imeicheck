@@ -140,6 +140,30 @@ exports.me = async (req, res) => {
   }
 };
 
+// --- ACTUALIZAR PERFIL PROPIO ---
+exports.updateMe = async (req, res) => {
+  try {
+    const { full_name, country, phone } = req.body;
+    const user = await User.findByPk(req.user.user_id);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (typeof full_name !== 'undefined') user.full_name = full_name;
+    if (typeof country !== 'undefined') user.country = country;
+    if (typeof phone !== 'undefined') user.phone = phone;
+    await user.save();
+    res.json({
+      user_id: user.user_id,
+      username: user.username,
+      email: user.email,
+      full_name: user.full_name,
+      country: user.country,
+      phone: user.phone,
+      user_type: user.user_type
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al actualizar perfil' });
+  }
+};
+
 // --- PERFIL AUTENTICADO (LEGACY) ---
 exports.getProfile = async (req, res) => {
   try {

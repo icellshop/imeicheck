@@ -4,8 +4,9 @@
   "description": "Backend API para imeicheck2.com",
   "main": "app.js",
   "scripts": {
-    "start": "node app.js",
-    "dev": "nodemon app.js"
+    "build": "cd frontend && npm install && npm run build",
+    "start": "node backend/app.js",
+    "dev": "cd backend && nodemon app.js"
   },
   "keywords": [
     "express",

@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../../config/db');
-const User = require('./user');
 
 const Payment = sequelize.define('Payment', {
   payment_id: {
@@ -77,8 +76,5 @@ const Payment = sequelize.define('Payment', {
   updatedAt: false, // Tu tabla solo tiene created_at, no actualiza updated_at
   underscored: true,
 });
-
-// Relaciones (define solo una vez en models/index.js idealmente)
-Payment.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 module.exports = Payment;

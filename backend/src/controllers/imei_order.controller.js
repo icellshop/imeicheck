@@ -1,7 +1,10 @@
 const IMEIOrder = require('../models/imei_order');
 const Service = require('../models/service');
 const User = require('../models/user');
+const sequelize = require('../../config/db');
+const { Op } = require('sequelize');
 const { sendMail } = require('../utils/mailer');
+const getUserBalance = require('../utils/getUserBalance');
 
 // Cargar fetch nativo o node-fetch según versión de Node
 let fetch;
@@ -13,13 +16,17 @@ try {
 
 // Crear una orden (usuario o guest), acepta varios IMEI en una sola orden
 exports.createOrder = async (req, res) => {
+  let transaction = null;
   try {
     let { imei, imeis, service_id, guest_email } = req.body;
     const user = req.user || null;
-    const user_id = user ? user.user_id : 999;
+    const user_id = user ? user.user_id : null;
 
-    if (!user_id && !guest_email) {
-      return res.status(400).json({ error: 'Se requiere guest_email para pedidos como invitado.' });
+    if (!user_id) {
+      return res.status(403).json({
+        error: 'Los pedidos guest deben pagarse por Stripe antes de crearse.',
+        checkout_endpoint: '/api/payments/stripe/imei-checkout'
+      });
     }
 
     const service = await Service.findByPk(service_id);
@@ -38,19 +45,41 @@ exports.createOrder = async (req, res) => {
     }
 
     for (const i of imeisArr) {
-      if (!/^\d{15}$/.test(i)) {
-        return res.status(400).json({ error: `IMEI inválido: ${i}` });
+      // Accept 15-digit IMEI or alphanumeric SN (8-25 chars)
+      if (!/^\d{15}$/.test(i) && !/^[A-Za-z0-9]{8,25}$/.test(i)) {
+        return res.status(400).json({ error: `IMEI/SN inválido: ${i}` });
       }
     }
 
-    let price_used = service.price_guest;
-    let user_type_at_order = 'guest';
-    if (user) {
-      const tipo = user.user_type || 'registered';
-      user_type_at_order = tipo;
-      if (tipo === 'pro') price_used = service.price_pro;
-      else if (tipo === 'premium') price_used = service.price_premium;
-      else price_used = service.price_registered;
+    let unit_price = service.price_registered;
+    let user_type_at_order = user.user_type || 'registered';
+    if (user_type_at_order === 'pro') unit_price = service.price_pro;
+    else if (user_type_at_order === 'premium') unit_price = service.price_premium;
+
+    unit_price = Number(unit_price);
+    if (Number.isNaN(unit_price) || unit_price <= 0) {
+      return res.status(400).json({ error: 'Precio de servicio inválido para el tipo de usuario' });
+    }
+
+    transaction = await sequelize.transaction();
+
+    await User.findByPk(user_id, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    const estimated_total = unit_price * imeisArr.length;
+    const currentBalance = await getUserBalance(user_id, { transaction });
+    if (currentBalance < estimated_total) {
+      await transaction.rollback();
+      transaction = null;
+      return res.status(402).json({
+        error: 'Saldo insuficiente',
+        available_balance: currentBalance,
+        required_balance: estimated_total,
+        imeis_count: imeisArr.length,
+        unit_price
+      });
     }
 
     const imeiFieldToSave = JSON.stringify(imeisArr);
@@ -59,15 +88,15 @@ exports.createOrder = async (req, res) => {
       imei: imeiFieldToSave,
       service_id,
       user_id,
-      guest_email: user_id === 999 ? guest_email : null,
+      guest_email: null,
       status: 'pending',
       created_at: new Date(),
-      price_used,
+      price_used: estimated_total,
       user_type_at_order,
       service_name_at_order: service.service_name,
       currency: 'USD',
       ip_address: req.ip
-    });
+    }, { transaction });
 
     let clientResults = null;
 
@@ -111,13 +140,17 @@ exports.createOrder = async (req, res) => {
       newOrder.result = JSON.stringify(apiResults);
       const allOk = apiResults.every(r => r.status === 'completed');
       const anyOk = apiResults.some(r => r.status === 'completed');
+      const completedCount = apiResults.filter(r => r.status === 'completed').length;
+      const chargedAmount = completedCount * unit_price;
       newOrder.status = allOk ? 'completed' : anyOk ? 'partial' : 'failed';
-      await newOrder.save();
+      newOrder.price_used = chargedAmount;
+      await newOrder.save({ transaction });
       clientResults = clientApiResults;
     } catch (fetchErr) {
       newOrder.result = JSON.stringify({ error: 'No se pudo contactar la API externa', detail: fetchErr.message });
       newOrder.status = 'failed';
-      await newOrder.save();
+      newOrder.price_used = 0;
+      await newOrder.save({ transaction });
       clientResults = imeisArr.map(i => ({
         imei: i,
         api: { result: null },
@@ -125,6 +158,9 @@ exports.createOrder = async (req, res) => {
         error: 'No se pudo contactar la API externa: ' + (fetchErr.message || fetchErr.toString())
       }));
     }
+
+    await transaction.commit();
+    transaction = null;
 
     // Notificación por mail si corresponde
     if (['completed', 'partial'].includes(newOrder.status)) {
@@ -138,20 +174,31 @@ exports.createOrder = async (req, res) => {
         let resultArr = [];
         try { resultArr = JSON.parse(newOrder.result); } catch (e) {}
         const firstResult = Array.isArray(resultArr) && resultArr[0] ? resultArr[0] : {};
-        await sendMail({
-          to: emailTo,
-          type: 'order_result',
-          data: {
-            result: firstResult.api?.result || firstResult.result || '',
-            imei: firstResult.imei || (Array.isArray(imeisArr) ? imeisArr[0] : newOrder.imei),
-            service: newOrder.service_name_at_order
-          }
-        });
+        try {
+          await sendMail({
+            to: emailTo,
+            type: 'order_result',
+            data: {
+              result: firstResult.api?.result || firstResult.result || '',
+              imei: firstResult.imei || (Array.isArray(imeisArr) ? imeisArr[0] : newOrder.imei),
+              service: newOrder.service_name_at_order
+            }
+          });
+        } catch (mailErr) {
+          console.error('Error enviando email de resultado:', mailErr);
+        }
       }
     }
 
     res.status(201).json(clientResults);
   } catch (error) {
+    if (transaction) {
+      try {
+        await transaction.rollback();
+      } catch (rollbackErr) {
+        console.error('Error en rollback createOrder:', rollbackErr);
+      }
+    }
     console.error(error);
     res.status(500).json({ error: 'Error al crear la orden' });
   }
@@ -166,7 +213,7 @@ exports.updateOrderStatus = async (req, res) => {
     const order = await IMEIOrder.findByPk(orderId);
     if (!order) return res.status(404).json({ error: 'Orden no encontrada' });
 
-    const validStatuses = ['pending', 'completed', 'failed'];
+    const validStatuses = ['pending', 'completed', 'partial', 'failed'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: 'Status inválido' });
     }
@@ -209,12 +256,22 @@ exports.updateOrderStatus = async (req, res) => {
   }
 };
 
-// Historial de órdenes del usuario autenticado
+// Historial de órdenes del usuario autenticado (con filtros opcionales)
 exports.getMyOrders = async (req, res) => {
   try {
     const userId = req.user.user_id;
+    const { imei, status, service, from, to } = req.query;
+    const where = { user_id: userId };
+    if (status) where.status = status;
+    if (service) where.service_name_at_order = { [Op.iLike]: `%${service}%` };
+    if (imei) where.imei = { [Op.iLike]: `%${imei}%` };
+    if (from || to) {
+      where.created_at = {};
+      if (from) where.created_at[Op.gte] = new Date(from);
+      if (to) where.created_at[Op.lte] = new Date(to + 'T23:59:59');
+    }
     const orders = await IMEIOrder.findAll({
-      where: { user_id: userId },
+      where,
       order: [['created_at', 'DESC']]
     });
     res.json(orders);

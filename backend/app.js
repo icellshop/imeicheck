@@ -6,6 +6,25 @@ const path = require('path');
 
 dotenv.config();
 
+function validateRequiredEnv() {
+  const requiredVars = [
+    'JWT_SECRET',
+    'STRIPE_SECRET_KEY',
+    'STRIPE_WEBHOOK_SECRET',
+    'IMEI_API_KEY',
+    'IMEI_API_URL',
+    'FRONTEND_URL',
+    'MAILGUN_API_KEY',
+    'MAILGUN_DOMAIN'
+  ];
+
+  const missing = requiredVars.filter((name) => !process.env[name]);
+  if (missing.length > 0) {
+    console.error(`Missing required env vars: ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
+
 const app = express();
 
 // =========== CONFIGURA ORIGEN CORS CON MÚLTIPLES DOMINIOS ===========
@@ -37,14 +56,6 @@ app.use(
   })
 );
 
-// =========== STRIPE WEBHOOK RAW BODY ===========
-const stripeWebhookController = require('./src/controllers/payment.controller').stripeWebhook;
-app.post(
-  '/api/payments/stripe-webhook',
-  express.raw({ type: 'application/json' }),
-  stripeWebhookController
-);
-
 // =========== JSON BODY PARSER (DESPUÉS DEL WEBHOOK) ===========
 app.use(express.json());
 
@@ -55,6 +66,8 @@ const imeiOrderRoutes = require('./src/routes/imei_order.routes');
 const dashboardRoutes = require('./src/routes/dashboard.routes');
 const countryListRoutes = require('./src/routes/countrylist.routes');
 const paymentRoutes = require('./src/routes/payment.routes');
+const apikeyRoutes = require('./src/routes/apikey.routes');
+const externalRoutes = require('./src/routes/external.routes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
@@ -62,34 +75,41 @@ app.use('/api/imei-orders', imeiOrderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/countrylist', countryListRoutes);
+app.use('/api/apikeys', apikeyRoutes);
+app.use('/api/external', externalRoutes);
 
-// =========== SERVIR ESTÁTICOS PUBLIC ===========
-app.use(express.static(path.join(__dirname, 'public')));
+if (process.env.ENABLE_LEGACY_STATIC === 'true') {
+  // =========== SERVIR ESTÁTICOS PUBLIC ===========
+  app.use(express.static(path.join(__dirname, 'public')));
 
-// =========== RUTAS LIMPIAS PARA ARCHIVOS HTML ===========
-app.get('/add-funds',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-funds.html')));
-app.get('/orders-g',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-orders.html')));
-app.get('/payments-g',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-payments.html')));
-app.get('/services-g',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-services.html')));
-app.get('/users-global',(req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-users.html')));
-app.get('/admin',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/dashboard',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
-app.get('/imei-guest',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'imei-check-guest.html')));
-app.get('/imei',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'imei-check.html')));
-app.get('/invoices',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'invoices.html')));
-app.get('/home',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing-client.html')));
-app.get('/login',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
-app.get('/order-history',(req, res) => res.sendFile(path.join(__dirname, 'public', 'order-history.html')));
-app.get('/profile',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'profile.html')));
+  // =========== RUTAS LIMPIAS PARA ARCHIVOS HTML ===========
+  app.get('/add-funds',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'add-funds.html')));
+  app.get('/orders-g',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-orders.html')));
+  app.get('/payments-g',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-payments.html')));
+  app.get('/services-g',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-services.html')));
+  app.get('/users-global',(req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-users.html')));
+  app.get('/admin',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+  app.get('/dashboard',   (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+  app.get('/imei-guest',  (req, res) => res.sendFile(path.join(__dirname, 'public', 'imei-check-guest.html')));
+  app.get('/imei',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'imei-check.html')));
+  app.get('/invoices',    (req, res) => res.sendFile(path.join(__dirname, 'public', 'invoices.html')));
+  app.get('/home',        (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing-client.html')));
+  app.get('/login',       (req, res) => res.sendFile(path.join(__dirname, 'public', 'login.html')));
+  app.get('/order-history',(req, res) => res.sendFile(path.join(__dirname, 'public', 'order-history.html')));
+  app.get('/profile',     (req, res) => res.sendFile(path.join(__dirname, 'public', 'profile.html')));
+}
 
-// =========== ENDPOINT RAÍZ PARA RENDER/API ===========
-app.get('/', (req, res) => {
-  res.send('API imeicheck funcionando');
+// =========== SERVE REACT FRONTEND (MONOREPO) ===========
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+// =========== 404 HANDLER (API ROUTES ONLY) ===========
+app.use('/api', (req, res, next) => {
+  res.status(404).json({ error: 'Ruta no encontrada' });
 });
 
-// =========== 404 HANDLER ===========
-app.use((req, res, next) => {
-  res.status(404).json({ error: 'Ruta no encontrada' });
+// =========== SPA FALLBACK (REACT ROUTER) ===========
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
 // =========== ERROR HANDLER GLOBAL ===========
@@ -102,6 +122,7 @@ const PORT = process.env.PORT || 8080;
 
 (async () => {
   try {
+    validateRequiredEnv();
     await sequelize.authenticate();
     console.log('Database connected...');
     await sequelize.sync();

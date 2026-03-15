@@ -21,6 +21,6 @@ router.get('/by-session/:session_id', imeiOrderController.getOrderBySession);
 router.get('/admin-list', auth, onlyAdmin, imeiOrderController.adminList);
 
 // Actualizar status y resultado de una orden (admin/sistema/worker)
-router.patch('/:id/status', imeiOrderController.updateOrderStatus);
+router.patch('/:id/status', auth, onlyAdmin, imeiOrderController.updateOrderStatus);
 
 module.exports = router;

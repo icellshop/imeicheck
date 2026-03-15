@@ -1,20 +1,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-// Middleware de autenticación JWT con soporte para pedidos guest en imei-orders
+// Middleware de autenticación JWT
 module.exports = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-
-  // Permitir pedidos guest (sin token) SOLO en POST /api/imei-orders si viene guest_email
-  if (
-    req.method === 'POST' &&
-    req.baseUrl === '/api/imei-orders' &&
-    (req.path === '/' || req.path === '') &&
-    req.body.guest_email
-  ) {
-    req.user = null; // Explicitamente guest
-    return next();
-  }
 
   // Para todas las demás rutas, requiere token
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
