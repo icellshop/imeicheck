@@ -6,12 +6,23 @@ async function getUserBalance(user_id, options = {}) {
   const { transaction } = options;
 
   // Suma de pagos aprobados
-const { sum: paymentsSum = 0 } = await Payment.findOne({
-  attributes: [[Payment.sequelize.fn('SUM', Payment.sequelize.col('credited_amount')), 'sum']],
-  where: { user_id, status: 'approved' },
-  transaction,
-  raw: true,
-}) || {};
+  const { sum: paymentsSum = 0 } = await Payment.findOne({
+    attributes: [[
+      Payment.sequelize.fn(
+        'SUM',
+        Payment.sequelize.fn(
+          'COALESCE',
+          Payment.sequelize.col('credited_amount'),
+          Payment.sequelize.col('amount'),
+          0
+        )
+      ),
+      'sum'
+    ]],
+    where: { user_id, status: 'approved' },
+    transaction,
+    raw: true,
+  }) || {};
 
   // Suma de cargos por órdenes completadas
   const { sum: ordersSum = 0 } = await IMEIOrder.findOne({
@@ -21,8 +32,8 @@ const { sum: paymentsSum = 0 } = await Payment.findOne({
     raw: true,
   }) || {};
 
-  // El balance es la diferencia
-  return Number(paymentsSum || 0) - Number(ordersSum || 0);
+  // El balance es la diferencia (nunca negativo)
+  return Math.max(0, Number(paymentsSum || 0) - Number(ordersSum || 0));
 }
 
 module.exports = getUserBalance;

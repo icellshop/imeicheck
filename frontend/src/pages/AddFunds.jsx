@@ -15,6 +15,11 @@ export default function AddFunds() {
   // Detect Stripe return
   const fundsStatus = searchParams.get('funds');
   const sessionId = searchParams.get('session_id');
+  const requestedAmount = Number(amount) || 0;
+  const stripeFee = requestedAmount > 0
+    ? Number((requestedAmount * 0.036 + 0.2).toFixed(2))
+    : 0;
+  const totalCharge = Number((requestedAmount + stripeFee).toFixed(2));
 
   useEffect(() => {
     if (fundsStatus === 'success') {
@@ -121,6 +126,11 @@ export default function AddFunds() {
               className="w-full rounded-lg bg-slate-800 border border-slate-700 pl-7 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500"
             />
           </div>
+          {requestedAmount > 0 && (
+            <p className="mt-2 text-xs text-slate-400">
+              You receive ${requestedAmount.toFixed(2)}. Stripe fee (3.6% + $0.20): ${stripeFee.toFixed(2)}. Total charge: ${totalCharge.toFixed(2)}.
+            </p>
+          )}
         </div>
 
         {error && (
@@ -134,7 +144,7 @@ export default function AddFunds() {
           disabled={loading || !amount || Number(amount) < 1}
           className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 px-4 py-2.5 text-sm font-semibold text-white transition-colors"
         >
-          {loading ? 'Redirecting to Stripe…' : `Pay $${Number(amount || 0).toFixed(2)} via Stripe`}
+          {loading ? 'Redirecting to Stripe…' : `Pay $${totalCharge.toFixed(2)} via Stripe`}
         </button>
 
         <p className="text-xs text-slate-500 text-center">

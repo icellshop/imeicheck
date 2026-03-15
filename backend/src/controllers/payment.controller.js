@@ -35,10 +35,14 @@ function getFrontendUrl() {
 exports.createStripeCheckoutSession = async (req, res) => {
   try {
     const user_id = req.user.user_id;
-    const { amount, original_amount, currency = 'usd' } = req.body;
+    const { amount, currency = 'usd' } = req.body;
 
     if (!amount || isNaN(amount) || amount <= 0)
       return res.status(400).json({ error: 'Monto inválido' });
+
+    const requestedAmount = Number(amount);
+    const stripeFee = Number((requestedAmount * 0.036 + 0.2).toFixed(2));
+    const checkoutAmount = Number((requestedAmount + stripeFee).toFixed(2));
 
     const user = await User.findByPk(user_id);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -53,15 +57,16 @@ exports.createStripeCheckoutSession = async (req, res) => {
           price_data: {
             currency,
             product_data: { name: 'Recarga de saldo' },
-            unit_amount: Math.round(amount * 100),
+            unit_amount: Math.round(checkoutAmount * 100),
           },
           quantity: 1,
         },
       ],
       metadata: {
         user_id: String(user_id),
-        recharge_amount: String(amount),
-        original_amount: original_amount ? String(original_amount) : String(amount),
+        recharge_amount: String(checkoutAmount),
+        original_amount: String(requestedAmount),
+        stripe_fee: String(stripeFee),
       },
       success_url: `${frontendUrl}/add-funds?funds=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${frontendUrl}/add-funds?funds=cancel`,
