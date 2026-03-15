@@ -3,7 +3,7 @@ const normalizedApiUrl = rawApiUrl ? rawApiUrl.replace(/\/$/, '') : '';
 const isLocalApiUrl = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalizedApiUrl);
 
 const API_BASE = import.meta.env.DEV
-  ? normalizedApiUrl || 'http://localhost:8080'
+  ? normalizedApiUrl || ''
   : !normalizedApiUrl || isLocalApiUrl
     ? ''
     : normalizedApiUrl;
