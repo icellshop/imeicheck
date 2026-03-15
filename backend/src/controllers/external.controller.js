@@ -50,6 +50,12 @@ function getConfirmationExpiry() {
   return expiry;
 }
 
+function resolveTierPrice(service, userType) {
+  if (userType === 'pro') return Number(service.price_pro);
+  if (userType === 'premium') return Number(service.price_premium);
+  return Number(service.price_registered);
+}
+
 function mapExternalOrder(order) {
   return {
     order_id: order.order_id,
@@ -159,6 +165,23 @@ exports.initConfirmation = async (req, res) => {
       last_link_source: linkSource,
     });
 
+    const userType = authResult.user.user_type || 'registered';
+    const services = await Service.findAll({
+      attributes: ['service_id', 'active', 'price_registered', 'price_premium', 'price_pro'],
+      order: [['service_id', 'ASC']],
+    });
+    const pricingUpdatedAt = new Date().toISOString();
+
+    const pricing = services.map((service) => {
+      const price = resolveTierPrice(service, userType);
+      return {
+        service_id: service.service_id,
+        price: Number.isFinite(price) ? price : 0,
+        currency: 'USD',
+        active: Boolean(service.active),
+      };
+    });
+
     return res.json({
       success: true,
       confirmed: true,
@@ -166,6 +189,8 @@ exports.initConfirmation = async (req, res) => {
       confirmation_token: confirmationToken,
       expires_at: expiresAt.toISOString(),
       expires_in: 600,
+      pricing,
+      pricing_updated_at: pricingUpdatedAt,
     });
   } catch (err) {
     console.error('initConfirmation error:', err);
@@ -222,9 +247,7 @@ exports.externalImeiCheck = async (req, res) => {
 
     // ── 6. Determine price based on user type ─────────────────────────────
     const user_type = user.user_type || 'registered';
-    let unit_price = Number(service.price_registered);
-    if (user_type === 'pro') unit_price = Number(service.price_pro);
-    else if (user_type === 'premium') unit_price = Number(service.price_premium);
+    const unit_price = resolveTierPrice(service, user_type);
 
     if (Number.isNaN(unit_price) || unit_price <= 0) {
       return res.status(400).json({ success: false, error: 'Invalid service price for this account type.' });
