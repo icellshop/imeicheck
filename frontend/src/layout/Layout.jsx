@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import BrandLogoLink from '../components/BrandLogoLink';
 
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: '▦' },
@@ -57,9 +58,7 @@ export default function Layout() {
       >
         {/* Brand */}
         <div className="px-5 py-4 border-b border-slate-800">
-          <span className="text-lg font-bold tracking-tight text-white">
-            IMEI<span className="text-indigo-400">Check</span>
-          </span>
+          <BrandLogoLink className="inline-flex items-center" imageClassName="h-8 w-auto" fallbackClassName="text-lg font-bold tracking-tight text-white" />
         </div>
 
         {/* Nav */}
@@ -103,9 +102,7 @@ export default function Layout() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Topbar */}
         <header className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 md:hidden">
-          <span className="font-bold text-white">
-            IMEI<span className="text-indigo-400">Check</span>
-          </span>
+          <BrandLogoLink className="inline-flex items-center" imageClassName="h-7 w-auto" fallbackClassName="font-bold text-white" />
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-slate-300 hover:text-white"

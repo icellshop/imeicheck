@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import BrandLogoLink from '../components/BrandLogoLink';
 
 export default function ResetPassword() {
   const [params] = useSearchParams();
@@ -50,9 +51,7 @@ export default function ResetPassword() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-bold text-white">
-            IMEI<span className="text-indigo-400">Check</span>
-          </h1>
+          <BrandLogoLink className="inline-flex items-center justify-center" imageClassName="h-10 w-auto" fallbackClassName="text-3xl font-bold text-white" />
           <p className="text-slate-400 text-sm mt-1">Set a new password</p>
         </div>
 

@@ -3,6 +3,7 @@ const Service = require('./service');
 const ImeiOrder = require('./imei_order');
 const Payment = require('./payment');
 const ApiKey = require('./apikey');
+const BrandingSetting = require('./branding_setting');
 
 // Todas las asociaciones van aquí:
 
@@ -27,4 +28,5 @@ module.exports = {
   ImeiOrder,
   Payment,
   ApiKey,
+  BrandingSetting,
 };

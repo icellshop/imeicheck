@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
+import BrandLogoLink from '../components/BrandLogoLink';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -34,9 +35,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white">
-            IMEI<span className="text-indigo-400">Check</span>
-          </h1>
+          <BrandLogoLink className="inline-flex items-center justify-center" imageClassName="h-10 w-auto" fallbackClassName="text-3xl font-bold text-white" />
           <p className="text-slate-400 text-sm mt-1">Sign in to your account</p>
         </div>
 
@@ -96,3 +95,5 @@ export default function Login() {
     </div>
   );
 }
+
+

@@ -85,6 +85,7 @@ const countryListRoutes = require('./src/routes/countrylist.routes');
 const paymentRoutes = require('./src/routes/payment.routes');
 const apikeyRoutes = require('./src/routes/apikey.routes');
 const externalRoutes = require('./src/routes/external.routes');
+const brandingRoutes = require('./src/routes/branding.routes');
 
 app.use('/api/users', userRoutes);
 app.use('/api/services', serviceRoutes);
@@ -94,6 +95,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/countrylist', countryListRoutes);
 app.use('/api/apikeys', apikeyRoutes);
 app.use('/api/external', externalRoutes);
+app.use('/api/branding', brandingRoutes);
 
 if (process.env.ENABLE_LEGACY_STATIC === 'true') {
   // =========== SERVIR ESTÁTICOS PUBLIC ===========

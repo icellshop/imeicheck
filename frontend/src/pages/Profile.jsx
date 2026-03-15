@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
@@ -26,6 +26,20 @@ export default function Profile() {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMsg, setPwMsg] = useState('');
   const [pwErr, setPwErr] = useState('');
+
+  const [branding, setBranding] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoLoading, setLogoLoading] = useState(false);
+  const [logoMsg, setLogoMsg] = useState('');
+  const [logoErr, setLogoErr] = useState('');
+  const isSuperAdmin = user?.user_type === 'superadmin';
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    apiFetch('/api/branding')
+      .then((data) => setBranding(data || null))
+      .catch(() => setBranding(null));
+  }, [isSuperAdmin]);
 
   function setP(field) {
     return (e) => setProfileForm((s) => ({ ...s, [field]: e.target.value }));
@@ -84,6 +98,35 @@ export default function Profile() {
     }
   }
 
+  async function handleLogoUpload(e) {
+    e.preventDefault();
+    if (!logoFile) {
+      setLogoErr('Please select an image file.');
+      return;
+    }
+
+    setLogoLoading(true);
+    setLogoMsg('');
+    setLogoErr('');
+
+    const body = new FormData();
+    body.append('logo', logoFile);
+
+    try {
+      const data = await apiFetch('/api/branding/logo', {
+        method: 'PUT',
+        body,
+      }, token);
+      setBranding(data);
+      setLogoMsg(data.message || 'Global logo updated successfully.');
+      setLogoFile(null);
+    } catch (err) {
+      setLogoErr(err.message);
+    } finally {
+      setLogoLoading(false);
+    }
+  }
+
   function handleLogout() {
     logout();
     navigate('/login');
@@ -96,7 +139,6 @@ export default function Profile() {
         <p className="text-sm text-slate-400 mt-0.5">Manage your account settings.</p>
       </div>
 
-      {/* Read-only info */}
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-3">
         <h3 className="text-sm font-semibold text-slate-300 mb-1">Account Info</h3>
         <InfoRow label="User ID" value={`#${user?.user_id}`} mono />
@@ -110,7 +152,6 @@ export default function Profile() {
         />
       </div>
 
-      {/* Editable profile */}
       <form
         onSubmit={handleProfileSave}
         className="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-4"
@@ -153,7 +194,52 @@ export default function Profile() {
         </button>
       </form>
 
-      {/* Change password */}
+      {isSuperAdmin && (
+        <form
+          onSubmit={handleLogoUpload}
+          className="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-4"
+        >
+          <h3 className="text-sm font-semibold text-slate-300">Global Branding Logo</h3>
+
+          {logoMsg && (
+            <div className="rounded-lg bg-emerald-950 border border-emerald-700 px-3 py-2 text-sm text-emerald-300">
+              {logoMsg}
+            </div>
+          )}
+          {logoErr && (
+            <div className="rounded-lg bg-rose-950 border border-rose-700 px-3 py-2 text-sm text-rose-300">
+              {logoErr}
+            </div>
+          )}
+
+          {branding?.logo_url ? (
+            <div className="rounded-lg bg-slate-800 border border-slate-700 p-3">
+              <img src={branding.logo_url} alt="Current logo" className="h-12 w-auto" />
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400">No logo uploaded yet.</p>
+          )}
+
+          <div>
+            <label className="block text-xs text-slate-400 mb-1">Logo image (PNG/JPG/WEBP/SVG, max 2MB)</label>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+              onChange={(e) => setLogoFile(e.target.files?.[0] || null)}
+              className="w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-sm text-white file:mr-3 file:rounded file:border-0 file:bg-indigo-600 file:px-3 file:py-1.5 file:text-white"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={logoLoading}
+            className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-4 py-2.5 text-sm font-semibold text-white transition-colors"
+          >
+            {logoLoading ? 'Uploading…' : 'Upload Global Logo'}
+          </button>
+        </form>
+      )}
+
       <form
         onSubmit={handleChangePassword}
         className="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-4"
@@ -205,7 +291,6 @@ export default function Profile() {
         </button>
       </form>
 
-      {/* Logout */}
       <div className="bg-slate-900 rounded-xl border border-red-900/40 p-5">
         <h3 className="text-sm font-semibold text-slate-300 mb-3">Session</h3>
         <button
