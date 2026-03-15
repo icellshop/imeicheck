@@ -1,6 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_URL
-  ? import.meta.env.VITE_API_URL.replace(/\/$/, '')
-  : import.meta.env.DEV ? 'http://localhost:8080' : '';
+const rawApiUrl = (import.meta.env.VITE_API_URL || '').trim();
+const normalizedApiUrl = rawApiUrl ? rawApiUrl.replace(/\/$/, '') : '';
+const isLocalApiUrl = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalizedApiUrl);
+
+const API_BASE = import.meta.env.DEV
+  ? normalizedApiUrl || 'http://localhost:8080'
+  : !normalizedApiUrl || isLocalApiUrl
+    ? ''
+    : normalizedApiUrl;
 
 async function parseResponse(res) {
   const contentType = res.headers.get('content-type') || '';
