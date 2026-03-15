@@ -11,6 +11,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const isSuperAdmin = user?.user_type === 'superadmin';
+  const coverageGap = getCoverageGapValue(quickStats);
 
   useEffect(() => {
     let cancelled = false;
@@ -97,6 +98,12 @@ export default function AdminDashboard() {
       {isSuperAdmin && quickStats?.imeicheck_upstream_balance?.error && (
         <div className="rounded-xl bg-amber-950 border border-amber-700 px-4 py-3 text-sm text-amber-300">
           Upstream balance warning: {quickStats.imeicheck_upstream_balance.error}
+        </div>
+      )}
+
+      {isSuperAdmin && coverageGap < 0 && (
+        <div className="rounded-xl bg-rose-950 border border-rose-700 px-4 py-3 text-sm text-rose-300">
+          Coverage alert: Upstream IMEICHECK balance is ${Math.abs(coverageGap).toFixed(2)} below total users live balance. Top up upstream credits to avoid user service interruptions.
         </div>
       )}
 
@@ -187,9 +194,13 @@ function formatUpstreamBalance(upstream) {
 }
 
 function formatCoverageGap(quickStats) {
-  const usersTotal = Number(quickStats?.users_live_balance_total || 0);
-  const upstreamTotal = Number(quickStats?.imeicheck_upstream_balance?.value || 0);
-  const gap = upstreamTotal - usersTotal;
+  const gap = getCoverageGapValue(quickStats);
   const sign = gap >= 0 ? '+' : '-';
   return `${sign}$${Math.abs(gap).toFixed(2)}`;
+}
+
+function getCoverageGapValue(quickStats) {
+  const usersTotal = Number(quickStats?.users_live_balance_total || 0);
+  const upstreamTotal = Number(quickStats?.imeicheck_upstream_balance?.value || 0);
+  return upstreamTotal - usersTotal;
 }
