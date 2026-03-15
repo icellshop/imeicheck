@@ -27,7 +27,10 @@ async function getUserBalance(user_id, options = {}) {
   // Suma de cargos por órdenes completadas
   const { sum: ordersSum = 0 } = await IMEIOrder.findOne({
     attributes: [[IMEIOrder.sequelize.fn('SUM', IMEIOrder.sequelize.col('price_used')), 'sum']],
-    where: { user_id, status: 'completed' },
+    where: {
+      user_id,
+      status: ['completed', 'partial'],
+    },
     transaction,
     raw: true,
   }) || {};

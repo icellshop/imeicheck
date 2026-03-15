@@ -10,10 +10,13 @@ export default function AdminDashboard() {
   const [paymentsTimeline, setPaymentsTimeline] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const isSuperAdmin = user?.user_type === 'superadmin';
 
   useEffect(() => {
-    async function load() {
-      setLoading(true);
+    let cancelled = false;
+
+    async function load({ withLoader = true } = {}) {
+      if (withLoader) setLoading(true);
       setError('');
       try {
         const [quick, orders, usage, timeline] = await Promise.all([
@@ -23,18 +26,26 @@ export default function AdminDashboard() {
           apiFetch('/api/dashboard/payments-approved-timeline', {}, token),
         ]);
 
-        setQuickStats(quick);
-        setOrderStats(orders);
-        setServicesUsage(Array.isArray(usage) ? usage : []);
-        setPaymentsTimeline(timeline);
+        if (!cancelled) {
+          setQuickStats(quick);
+          setOrderStats(orders);
+          setServicesUsage(Array.isArray(usage) ? usage : []);
+          setPaymentsTimeline(timeline);
+        }
       } catch (err) {
-        setError(err.message);
+        if (!cancelled) setError(err.message);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
-    load();
+    load({ withLoader: true });
+    const timer = setInterval(() => load({ withLoader: false }), 15000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
@@ -62,6 +73,32 @@ export default function AdminDashboard() {
         <StatCard label="Revenue" value={`$${Number(quickStats?.payments ?? 0).toFixed(2)}`} accent="text-emerald-400" />
         <StatCard label="Completed Orders" value={orderStats?.completed ?? 0} accent="text-indigo-400" />
       </div>
+
+      {isSuperAdmin && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard
+            label="All Users Live Balance"
+            value={`$${Number(quickStats?.users_live_balance_total ?? 0).toFixed(2)}`}
+            accent="text-amber-300"
+          />
+          <StatCard
+            label="IMEICHECK Upstream Balance"
+            value={formatUpstreamBalance(quickStats?.imeicheck_upstream_balance)}
+            accent="text-cyan-300"
+          />
+          <StatCard
+            label="Coverage Gap"
+            value={formatCoverageGap(quickStats)}
+            accent="text-fuchsia-300"
+          />
+        </div>
+      )}
+
+      {isSuperAdmin && quickStats?.imeicheck_upstream_balance?.error && (
+        <div className="rounded-xl bg-amber-950 border border-amber-700 px-4 py-3 text-sm text-amber-300">
+          Upstream balance warning: {quickStats.imeicheck_upstream_balance.error}
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
@@ -141,4 +178,18 @@ function MetricRow({ label, value }) {
 function getBarWidth(totals, index) {
   const max = Math.max(...totals, 1);
   return Math.round((Number(totals[index] || 0) / max) * 100);
+}
+
+function formatUpstreamBalance(upstream) {
+  if (!upstream) return 'N/A';
+  if (upstream.value === null || typeof upstream.value === 'undefined') return 'N/A';
+  return `$${Number(upstream.value).toFixed(2)}`;
+}
+
+function formatCoverageGap(quickStats) {
+  const usersTotal = Number(quickStats?.users_live_balance_total || 0);
+  const upstreamTotal = Number(quickStats?.imeicheck_upstream_balance?.value || 0);
+  const gap = upstreamTotal - usersTotal;
+  const sign = gap >= 0 ? '+' : '-';
+  return `${sign}$${Math.abs(gap).toFixed(2)}`;
 }

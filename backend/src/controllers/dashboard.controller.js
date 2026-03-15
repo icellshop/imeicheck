@@ -1,13 +1,110 @@
 const { User, ImeiOrder, Payment } = require('../models');
 const { Op, fn, col, literal, Sequelize } = require('sequelize');
 
+let fetch;
+try {
+  fetch = global.fetch || require('node-fetch');
+} catch (e) {
+  fetch = global.fetch;
+}
+
+async function getAllUsersLiveBalanceSum() {
+  const [row] = await Payment.sequelize.query(
+    `
+      SELECT COALESCE(SUM(GREATEST(0, COALESCE(p.total_paid, 0) - COALESCE(o.total_spent, 0))), 0) AS total_live_balance
+      FROM users u
+      LEFT JOIN (
+        SELECT user_id, SUM(COALESCE(credited_amount, amount, 0)) AS total_paid
+        FROM payments
+        WHERE status = 'approved'
+        GROUP BY user_id
+      ) p ON p.user_id = u.user_id
+      LEFT JOIN (
+        SELECT user_id, SUM(COALESCE(price_used, 0)) AS total_spent
+        FROM imei_orders
+        WHERE status IN ('completed', 'partial')
+        GROUP BY user_id
+      ) o ON o.user_id = u.user_id
+    `,
+    { type: Sequelize.QueryTypes.SELECT }
+  );
+
+  return Number(row?.total_live_balance || 0);
+}
+
+async function getUpstreamImeiCheckBalance() {
+  const key = process.env.IMEI_API_KEY;
+  if (!key) {
+    return { value: null, error: 'IMEI_API_KEY is not configured.' };
+  }
+
+  const endpoint = `https://alpha.imeicheck.com/api/php-api/balance?key=${encodeURIComponent(key)}`;
+
+  try {
+    const response = await fetch(endpoint, { method: 'GET' });
+    const rawText = await response.text();
+
+    let parsed = null;
+    try {
+      parsed = rawText ? JSON.parse(rawText) : null;
+    } catch (_err) {
+      parsed = null;
+    }
+
+    const candidates = [
+      parsed?.balance,
+      parsed?.credit,
+      parsed?.credits,
+      parsed?.account_balance,
+      parsed?.data?.balance,
+      parsed?.data?.credit,
+      rawText,
+    ];
+
+    let value = null;
+    for (const candidate of candidates) {
+      if (candidate === null || typeof candidate === 'undefined') continue;
+      const numeric = Number(String(candidate).replace(/[^0-9.-]/g, ''));
+      if (Number.isFinite(numeric)) {
+        value = numeric;
+        break;
+      }
+    }
+
+    return {
+      value,
+      raw: parsed || rawText,
+      http_status: response.status,
+      ok: response.ok,
+      error: response.ok ? null : `Upstream balance endpoint returned HTTP ${response.status}`,
+    };
+  } catch (error) {
+    return { value: null, error: error.message || 'Could not reach upstream balance endpoint.' };
+  }
+}
+
 // 1. Quick stats
 exports.quickStats = async (req, res) => {
   try {
     const users = await User.count();
     const orders = await ImeiOrder.count();
     const payments = await Payment.sum('amount', { where: { status: 'approved' } }) || 0;
-    res.json({ users, orders, payments });
+
+    let users_live_balance_total = null;
+    let imeicheck_upstream_balance = null;
+
+    if (req.user?.user_type === 'superadmin') {
+      users_live_balance_total = await getAllUsersLiveBalanceSum();
+      imeicheck_upstream_balance = await getUpstreamImeiCheckBalance();
+    }
+
+    res.json({
+      users,
+      orders,
+      payments,
+      users_live_balance_total,
+      imeicheck_upstream_balance,
+    });
   } catch (e) {
     res.status(500).json({ error: 'Error fetching quick stats', details: e.message });
   }
