@@ -24,7 +24,7 @@ export default function Landing() {
     <div className="min-h-screen bg-slate-950 text-white">
       <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <BrandLogoLink className="inline-flex items-center" imageClassName="h-8 w-auto" fallbackClassName="text-xl font-bold" />
+          <BrandLogoLink className="inline-flex items-center" imageClassName="h-10 w-auto object-contain" fallbackClassName="text-xl font-bold" />
           <div className="flex items-center gap-2">
             <Link
               to="/guest-checker"

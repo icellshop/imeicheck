@@ -35,7 +35,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <BrandLogoLink className="inline-flex items-center justify-center" imageClassName="h-10 w-auto" fallbackClassName="text-3xl font-bold text-white" />
+          <BrandLogoLink className="inline-flex items-center justify-center" imageClassName="h-12 w-auto object-contain" fallbackClassName="text-3xl font-bold text-white" />
           <p className="text-slate-400 text-sm mt-1">Sign in to your account</p>
         </div>
 
