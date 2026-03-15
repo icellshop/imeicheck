@@ -306,6 +306,27 @@ export default function ApiKeys() {
         </div>
 
         <div>
+          <p className="text-xs text-slate-500 mb-1">Step 4: Revoke webhook (unlink required)</p>
+          <p className="text-xs text-slate-400 mb-2">
+            If the user revokes or regenerates their key in imeicheck2, a webhook can notify probuyer to unlink immediately.
+            Probuyer must not auto-link a new key; user must relink manually.
+          </p>
+          <pre className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-3 text-xs font-mono text-slate-200 overflow-x-auto">{`{
+  "event": "imeicheck2.api_key.revoked",
+  "triggered_at": "2026-03-15T18:00:00.000Z",
+  "user_id": 123,
+  "email": "user@example.com",
+  "key_id": 456,
+  "key_label": "probuyer integration",
+  "reason": "manual_revoke | regenerated",
+  "revoked_at": "2026-03-15T18:00:00.000Z"
+}`}</pre>
+          <p className="text-xs text-slate-500 mt-2">
+            Optional security header: <span className="font-mono text-slate-300">x-probuyer-secret</span>
+          </p>
+        </div>
+
+        <div>
           <p className="text-xs text-slate-500 mb-1">Response (success)</p>
           <pre className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-3 text-xs font-mono text-slate-200 overflow-x-auto">{`{
   "success":  true,
