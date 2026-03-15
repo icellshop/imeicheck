@@ -7,21 +7,29 @@ const path = require('path');
 dotenv.config();
 
 function validateRequiredEnv() {
-  const requiredVars = [
+  const criticalVars = [
     'JWT_SECRET',
-    'STRIPE_SECRET_KEY',
-    'STRIPE_WEBHOOK_SECRET',
     'IMEI_API_KEY',
-    'IMEI_API_URL',
-    'FRONTEND_URL',
-    'MAILGUN_API_KEY',
-    'MAILGUN_DOMAIN'
+    'IMEI_API_URL'
   ];
 
-  const missing = requiredVars.filter((name) => !process.env[name]);
-  if (missing.length > 0) {
-    console.error(`Missing required env vars: ${missing.join(', ')}`);
+  const optionalVars = [
+    'STRIPE_SECRET_KEY',
+    'STRIPE_WEBHOOK_SECRET',
+    'MAILGUN_API_KEY',
+    'MAILGUN_DOMAIN',
+    'FRONTEND_URL'
+  ];
+
+  const missingCritical = criticalVars.filter((name) => !process.env[name]);
+  if (missingCritical.length > 0) {
+    console.error(`Missing critical env vars: ${missingCritical.join(', ')}`);
     process.exit(1);
+  }
+
+  const missingOptional = optionalVars.filter((name) => !process.env[name]);
+  if (missingOptional.length > 0) {
+    console.warn(`Missing optional env vars: ${missingOptional.join(', ')}`);
   }
 }
 
