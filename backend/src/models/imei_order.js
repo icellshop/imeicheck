@@ -56,6 +56,11 @@ const ImeiOrder = sequelize.define('ImeiOrder', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  request_source: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'imeicheck2',
+  },
   created_at: {
     type: DataTypes.DATE,
     allowNull: false,

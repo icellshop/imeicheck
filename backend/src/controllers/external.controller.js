@@ -50,6 +50,21 @@ function getConfirmationExpiry() {
   return expiry;
 }
 
+function mapExternalOrder(order) {
+  return {
+    order_id: order.order_id,
+    status: order.status,
+    request_source: order.request_source || 'imeicheck2',
+    imei: order.imei,
+    service_id: order.service_id,
+    service_name_at_order: order.service_name_at_order,
+    price_used: Number(order.price_used || 0),
+    created_at: order.created_at,
+    updated_at: order.updated_at,
+    result: order.result,
+  };
+}
+
 async function resolveExternalAuth({ confirmation_token, api_key, email }) {
   if (confirmation_token) {
     const keyRecord = await ApiKey.findOne({
@@ -243,6 +258,7 @@ exports.externalImeiCheck = async (req, res) => {
         service_name_at_order: service.service_name,
         currency: 'USD',
         ip_address: req.ip,
+        request_source: 'probuyer',
       },
       { transaction }
     );
@@ -322,6 +338,7 @@ exports.externalImeiCheck = async (req, res) => {
       success: anyOk,
       order_id: newOrder.order_id,
       status: finalStatus,
+      request_source: 'probuyer',
       results: clientResults,
       charged: chargedAmount,
       balance: newBalance,
@@ -331,6 +348,44 @@ exports.externalImeiCheck = async (req, res) => {
       try { await transaction.rollback(); } catch (_) {}
     }
     console.error('externalImeiCheck error:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+};
+
+// ── POST /api/external/orders ───────────────────────────────────────────────
+exports.externalOrderHistory = async (req, res) => {
+  try {
+    const { confirmation_token, api_key, email, status, limit } = req.body;
+
+    const authResult = await resolveExternalAuth({ confirmation_token, api_key, email });
+    if (authResult.error) {
+      return res.status(authResult.error.status).json(authResult.error.body);
+    }
+
+    const where = {
+      user_id: authResult.user.user_id,
+      request_source: 'probuyer',
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    const safeLimit = Math.min(Math.max(Number(limit) || 25, 1), 100);
+
+    const orders = await IMEIOrder.findAll({
+      where,
+      order: [['created_at', 'DESC']],
+      limit: safeLimit,
+    });
+
+    return res.json({
+      success: true,
+      total: orders.length,
+      orders: orders.map(mapExternalOrder),
+    });
+  } catch (err) {
+    console.error('externalOrderHistory error:', err);
     return res.status(500).json({ success: false, error: 'Internal server error.' });
   }
 };

@@ -87,6 +87,7 @@ export default function ApiKeys() {
 
   const externalUrl = `${API_BASE}/api/external/imei-check`;
   const initUrl = `${API_BASE}/api/external/init`;
+  const ordersUrl = `${API_BASE}/api/external/orders`;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -269,6 +270,38 @@ export default function ApiKeys() {
   "confirmation_token": "<short-lived-token>",
   "service_id": 1,
   "imeis": ["359998765432100", "359998765432101"]
+}`}</pre>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Step 3: Fetch probuyer order history</p>
+          <code className="block rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-xs font-mono text-indigo-300 break-all">
+            POST {ordersUrl}
+          </code>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Order history request (JSON)</p>
+          <pre className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-3 text-xs font-mono text-slate-200 overflow-x-auto">{`{
+  "confirmation_token": "<short-lived-token>",
+  "limit": 25
+}`}</pre>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Order history response</p>
+          <pre className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-3 text-xs font-mono text-slate-200 overflow-x-auto">{`{
+  "success": true,
+  "total": 1,
+  "orders": [
+    {
+      "order_id": 12345,
+      "request_source": "probuyer",
+      "status": "completed",
+      "service_name_at_order": "Find My iPhone",
+      "price_used": 0.01
+    }
+  ]
 }`}</pre>
         </div>
 

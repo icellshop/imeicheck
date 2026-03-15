@@ -11,6 +11,11 @@ const STATUS_BADGE = {
   failed: 'bg-rose-950 text-rose-400 border-rose-800',
 };
 
+const SOURCE_BADGE = {
+  imeicheck2: 'bg-slate-800 text-slate-300 border-slate-700',
+  probuyer: 'bg-sky-950 text-sky-300 border-sky-800',
+};
+
 export default function Orders() {
   const { token, services } = useAuth();
   const [orders, setOrders] = useState([]);
@@ -148,6 +153,7 @@ export default function Orders() {
             <thead>
               <tr className="border-b border-slate-800 text-xs text-slate-400">
                 <th className="px-4 py-3 text-left">Order ID</th>
+                <th className="px-4 py-3 text-left">Source</th>
                 <th className="px-4 py-3 text-left">Service</th>
                 <th className="px-4 py-3 text-left">IMEI / SN</th>
                 <th className="px-4 py-3 text-left">Status</th>
@@ -159,13 +165,13 @@ export default function Orders() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500 text-xs">
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500 text-xs">
                     Loading…
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500 text-xs">
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500 text-xs">
                     No orders found.
                   </td>
                 </tr>
@@ -177,6 +183,11 @@ export default function Orders() {
                     <>
                       <tr key={o.order_id} className="border-b border-slate-800/60 hover:bg-slate-800/40">
                         <td className="px-4 py-3 text-slate-400 font-mono text-xs">#{o.order_id}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs px-2 py-0.5 rounded border font-medium ${SOURCE_BADGE[o.request_source] || SOURCE_BADGE.imeicheck2}`}>
+                            {o.request_source === 'probuyer' ? 'Probuyer' : 'IMEICHECK2'}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-slate-200 max-w-[180px] truncate">
                           {o.service_name_at_order || `Service #${o.service_id}`}
                         </td>
@@ -210,7 +221,7 @@ export default function Orders() {
                       </tr>
                       {isExpanded && (
                         <tr key={`${o.order_id}-expand`} className="bg-slate-800/40">
-                          <td colSpan={7} className="px-4 py-3">
+                          <td colSpan={8} className="px-4 py-3">
                             <ResultBlock result={o.result} imeis={imeis} />
                           </td>
                         </tr>
