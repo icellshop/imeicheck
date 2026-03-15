@@ -18,7 +18,9 @@ function validateRequiredEnv() {
     'STRIPE_WEBHOOK_SECRET',
     'MAILGUN_API_KEY',
     'MAILGUN_DOMAIN',
-    'FRONTEND_URL'
+    'FRONTEND_URL',
+    'PROBUYER_UNLINK_WEBHOOK_URL',
+    'PROBUYER_UNLINK_WEBHOOK_SECRET'
   ];
 
   const missingCritical = criticalVars.filter((name) => !process.env[name]);

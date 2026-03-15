@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const ApiKey = require('../models/apikey');
 const User = require('../models/user');
+const { notifyProbuyerApiKeyRevoked } = require('../utils/probuyerNotifier');
 
 // Generate a fresh 64-char hex API key (32 random bytes)
 function generateRawKey() {
@@ -30,12 +31,31 @@ exports.createKey = async (req, res) => {
   try {
     const user_id = req.user.user_id;
     const { label } = req.body;
+    const normalizedEmail = (req.user.email || '').toLowerCase();
+
+    const existingKeys = await ApiKey.findAll({
+      where: { user_id, status: 'active' },
+      attributes: ['key_id', 'label'],
+      raw: true,
+    });
 
     // Revoke all existing active keys for this user
+    const revokedAt = new Date();
     await ApiKey.update(
-      { status: 'revoked', revoked_at: new Date(), revoked_by: user_id },
+      { status: 'revoked', revoked_at: revokedAt, revoked_by: user_id },
       { where: { user_id, status: 'active' } }
     );
+
+    await Promise.all(existingKeys.map((key) => (
+      notifyProbuyerApiKeyRevoked({
+        user_id,
+        email: normalizedEmail,
+        key_id: key.key_id,
+        key_label: key.label || null,
+        reason: 'regenerated',
+        revoked_at: revokedAt.toISOString(),
+      })
+    )));
 
     const newKey = await ApiKey.create({
       user_id,
@@ -66,15 +86,35 @@ exports.createKey = async (req, res) => {
 exports.revokeKey = async (req, res) => {
   try {
     const user_id = req.user.user_id;
+    const normalizedEmail = (req.user.email || '').toLowerCase();
+
+    const existingKeys = await ApiKey.findAll({
+      where: { user_id, status: 'active' },
+      attributes: ['key_id', 'label'],
+      raw: true,
+    });
+
+    const revokedAt = new Date();
 
     const updated = await ApiKey.update(
-      { status: 'revoked', revoked_at: new Date(), revoked_by: user_id },
+      { status: 'revoked', revoked_at: revokedAt, revoked_by: user_id },
       { where: { user_id, status: 'active' } }
     );
 
     if (updated[0] === 0) {
       return res.status(404).json({ error: 'No active API key found' });
     }
+
+    await Promise.all(existingKeys.map((key) => (
+      notifyProbuyerApiKeyRevoked({
+        user_id,
+        email: normalizedEmail,
+        key_id: key.key_id,
+        key_label: key.label || null,
+        reason: 'manual_revoke',
+        revoked_at: revokedAt.toISOString(),
+      })
+    )));
 
     res.json({ message: 'API key revoked successfully.' });
   } catch (err) {
