@@ -27,6 +27,10 @@ function validateRequiredEnv() {
 
 const app = express();
 
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 // =========== CONFIGURA ORIGEN CORS CON MÚLTIPLES DOMINIOS ===========
 const FRONTEND_URLS = [
   'https://imeicheckfrontend.onrender.com',
@@ -125,7 +129,9 @@ const PORT = process.env.PORT || 8080;
     validateRequiredEnv();
     await sequelize.authenticate();
     console.log('Database connected...');
-    await sequelize.sync();
+    if (process.env.NODE_ENV !== 'production') {
+      await sequelize.sync();
+    }
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       console.log(`CORS allowed origins: ${FRONTEND_URLS.join(', ')}`);
