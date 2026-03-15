@@ -134,8 +134,8 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
         username: String(username),
         email: email || '',
       },
-      success_url: `${frontendUrl}/imei-check?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${frontendUrl}/imei-check?payment=cancel`,
+      success_url: `${frontendUrl}/guest-checker?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${frontendUrl}/guest-checker?payment=cancel`,
     });
 
     res.json({ url: session.url });

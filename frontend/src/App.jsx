@@ -3,6 +3,10 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './layout/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import Landing from './pages/Landing';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import GuestImeiChecker from './pages/GuestImeiChecker';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
@@ -42,17 +46,19 @@ export default function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/guest-checker" element={<GuestImeiChecker />} />
           <Route
-            path="/"
             element={
               <ProtectedRoute>
                 <Layout />
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<DashboardEntry />} />
             <Route path="imei-check" element={<ImeiCheck />} />
             <Route path="add-funds" element={<AddFunds />} />
@@ -85,7 +91,15 @@ export default function App() {
               )}
             />
           </Route>
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/dashboard" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     </AuthProvider>

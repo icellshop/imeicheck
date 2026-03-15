@@ -1,11 +1,20 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { Op, fn, col } = require('sequelize');
+const crypto = require('crypto');
 const User = require('../models/user');
 const Payment = require('../models/payment');
 const ImeiOrder = require('../models/imei_order');
 const { sendMail } = require('../utils/mailer');
 const getUserBalance = require('../utils/getUserBalance');
+
+function getFrontendBaseUrl(req) {
+  const configured = (process.env.FRONTEND_URL || '').trim();
+  if (configured) return configured.replace(/\/$/, '');
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+  const host = req.get('host');
+  return `${protocol}://${host}`;
+}
 
 // --- REGISTRO ---
 exports.register = async (req, res) => {
@@ -161,30 +170,6 @@ exports.updateMe = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Error al actualizar perfil' });
-  }
-};
-
-// --- PERFIL AUTENTICADO (LEGACY) ---
-exports.getProfile = async (req, res) => {
-  try {
-    const user = req.user;
-    if (!user) {
-      return res.status(401).json({ error: 'No autenticado' });
-    }
-    const liveBalance = await getUserBalance(user.user_id);
-    res.json({
-      user_id: user.user_id,
-      username: user.username,
-      email: user.email,
-      user_type: user.user_type,
-      country: user.country,
-      full_name: user.full_name,
-      balance: liveBalance,
-      phone: user.phone
-    });
-  } catch (error) {
-    console.error('Error en getProfile:', error);
-    res.status(500).json({ error: 'Error al obtener perfil' });
   }
 };
 
@@ -348,23 +333,26 @@ exports.requestPasswordReset = async (req, res) => {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({ where: { email: normalizedEmail } });
     if (!user) {
-      return res.json({ message: 'Si el email existe, se enviará un código de recuperación.' });
+      return res.json({ message: 'If the email exists, a reset link has been sent.' });
     }
 
-    const reset_code = Math.floor(100000 + Math.random() * 900000).toString();
-    const reset_code_expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+    const reset_code_expires = new Date(Date.now() + 5 * 60 * 1000);
+    const frontendBaseUrl = getFrontendBaseUrl(req);
+    const resetUrl = `${frontendBaseUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
-    user.reset_code = reset_code;
+    user.reset_code = resetTokenHash;
     user.reset_code_expires = reset_code_expires;
     await user.save();
 
     await sendMail({
       to: user.email,
       type: 'password_reset',
-      data: { code: reset_code }
+      data: { resetUrl, expiresMinutes: 5 }
     });
 
-    res.json({ message: 'Si el email existe, se enviará un código de recuperación.' });
+    res.json({ message: 'If the email exists, a reset link has been sent.' });
   } catch (error) {
     console.error('Error en requestPasswordReset:', error);
     res.status(500).json({ error: 'Error al solicitar recuperación de contraseña' });
@@ -374,22 +362,25 @@ exports.requestPasswordReset = async (req, res) => {
 // --- RESET PASSWORD ---
 exports.resetPassword = async (req, res) => {
   try {
-    const { email, code, new_password } = req.body;
-    if (!email || !code || !new_password) {
-      return res.status(400).json({ error: 'Email, código y nueva contraseña requeridos' });
+    const { token, new_password } = req.body;
+    if (!token || !new_password) {
+      return res.status(400).json({ error: 'Token y nueva contraseña requeridos' });
+    }
+    if (String(new_password).length < 6) {
+      return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ where: { email: normalizedEmail } });
+    const tokenHash = crypto.createHash('sha256').update(String(token)).digest('hex');
+
+    const user = await User.findOne({
+      where: {
+        reset_code: tokenHash,
+        reset_code_expires: { [Op.gt]: new Date() }
+      }
+    });
+
     if (!user || !user.reset_code || !user.reset_code_expires) {
-      return res.status(400).json({ error: 'Código inválido o expirado' });
-    }
-
-    if (
-      user.reset_code !== code ||
-      new Date() > user.reset_code_expires
-    ) {
-      return res.status(400).json({ error: 'Código inválido o expirado' });
+      return res.status(400).json({ error: 'Token inválido o expirado' });
     }
 
     user.password_hash = await bcrypt.hash(new_password, 10);

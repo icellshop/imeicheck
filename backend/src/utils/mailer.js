@@ -13,10 +13,10 @@ const templates = {
     html: `<p>Tu código de verificación es: <b>${code}</b></p><p>Ingresa este código en la plataforma para verificar tu cuenta.</p>`,
     text: `Tu código de verificación es: ${code}`,
   }),
-  password_reset: ({ code }) => ({
-    subject: 'Código de recuperación de contraseña',
-    html: `<p>Tu código de recuperación es: <b>${code}</b></p><p>Este código es válido por 15 minutos.</p>`,
-    text: `Tu código de recuperación es: ${code}`,
+  password_reset: ({ resetUrl, expiresMinutes = 5 }) => ({
+    subject: 'Reset your password',
+    html: `<p>We received a request to reset your password.</p><p><a href="${resetUrl}">Click here to set a new password</a></p><p>This link is valid for ${expiresMinutes} minutes.</p>`,
+    text: `We received a request to reset your password. Open this link to continue: ${resetUrl}. This link is valid for ${expiresMinutes} minutes.`,
   }),
   order_result: ({ result, imei, service }) => {
     let prettyResult = '';
