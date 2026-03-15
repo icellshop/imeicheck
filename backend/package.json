@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "build": "cd .. && npm run build",
+    "render-build": "npm run build && npm install && npx sequelize-cli db:migrate",
     "dev": "nodemon app.js",
     "start": "node app.js"
   },
