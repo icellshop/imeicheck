@@ -25,11 +25,17 @@ function cleanImeiResult(html) {
   return text;
 }
 
-function getFrontendUrl() {
-  if (!process.env.FRONTEND_URL) {
-    throw new Error('FRONTEND_URL no está definido en variables de entorno');
+function getFrontendUrl(req) {
+  const configuredUrl = (process.env.FRONTEND_URL || '').trim();
+  if (configuredUrl) {
+    return configuredUrl.replace(/\/$/, '');
   }
-  return process.env.FRONTEND_URL.replace(/\/$/, ''); // quita / final si lo hay
+  const host = req.get('host');
+  const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
+  if (!host) {
+    throw new Error('No se pudo resolver FRONTEND_URL (env y host ausentes)');
+  }
+  return `${proto}://${host}`.replace(/\/$/, '');
 }
 
 exports.createStripeCheckoutSession = async (req, res) => {
@@ -47,7 +53,7 @@ exports.createStripeCheckoutSession = async (req, res) => {
     const user = await User.findByPk(user_id);
     if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-    const frontendUrl = getFrontendUrl();
+    const frontendUrl = getFrontendUrl(req);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -108,7 +114,7 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
       return res.status(400).json({ error: 'Precio de servicio inválido' });
     }
 
-    const frontendUrl = getFrontendUrl();
+    const frontendUrl = getFrontendUrl(req);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

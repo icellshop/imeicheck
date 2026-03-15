@@ -5,12 +5,8 @@ const auth = require('../middleware/auth');
 const onlyAdmin = require('../middleware/onlyAdmin');
 const onlySuperAdmin = require('../middleware/onlySuperAdmin');
 
-// Stripe Webhook (DEBE IR ANTES DE express.json en app.js o aquí con raw body)
-router.post(
-  '/stripe-webhook',
-  express.raw({ type: 'application/json' }),
-  paymentController.stripeWebhook
-);
+// Stripe Webhook (raw body se configura en app.js)
+router.post('/stripe-webhook', paymentController.stripeWebhook);
 
 // Crear sesión de Stripe Checkout para recarga de saldo
 router.post('/stripe-checkout', auth, paymentController.createStripeCheckoutSession);

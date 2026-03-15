@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 export default function ApiKeys() {
   const { token, user } = useAuth();
   const [activeKey, setActiveKey] = useState(null);
+  const [linkStatus, setLinkStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState('');
@@ -17,8 +18,10 @@ export default function ApiKeys() {
     try {
       const data = await apiFetch('/api/apikeys/me', {}, token);
       setActiveKey(data.active_key || null);
+      setLinkStatus(data.link_status || null);
     } catch {
       setActiveKey(null);
+      setLinkStatus(null);
     } finally {
       setLoading(false);
     }
@@ -47,6 +50,7 @@ export default function ApiKeys() {
         body: JSON.stringify({ label: newLabel.trim() || undefined }),
       }, token);
       setActiveKey(data.active_key);
+      setLinkStatus(data.link_status || null);
       setRevealed(true); // show the new key immediately after creation
       setNewLabel('');
       setMessage('New API key generated. Copy and store it safely — you can always regenerate it but old integrations will break.');
@@ -71,6 +75,7 @@ export default function ApiKeys() {
     try {
       const data = await apiFetch('/api/apikeys/revoke', { method: 'DELETE' }, token);
       setActiveKey(null);
+      setLinkStatus(null);
       setRevealed(false);
       setMessage(data.message || 'API key revoked.');
     } catch (err) {
@@ -133,6 +138,40 @@ export default function ApiKeys() {
                 Label: <span className="text-slate-200">{activeKey.label}</span>
               </p>
             )}
+
+            <div className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-2.5 text-xs text-slate-300 space-y-1">
+              <p>
+                Link status:{' '}
+                {linkStatus?.linked ? (
+                  <span className="inline-flex items-center rounded border border-emerald-800 bg-emerald-950 px-1.5 py-0.5 text-emerald-400">
+                    Linked
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded border border-amber-800 bg-amber-950 px-1.5 py-0.5 text-amber-300">
+                    Never linked
+                  </span>
+                )}
+              </p>
+              {linkStatus?.linked_at && (
+                <p>
+                  Last linked:{' '}
+                  <span className="text-slate-200">{new Date(linkStatus.linked_at).toLocaleString()}</span>
+                </p>
+              )}
+              {linkStatus?.source && (
+                <p>
+                  Source: <span className="text-slate-200">{linkStatus.source}</span>
+                </p>
+              )}
+              <p>
+                Token:{' '}
+                <span className={linkStatus?.token_valid ? 'text-emerald-400' : 'text-amber-400'}>
+                  {linkStatus?.token_valid
+                    ? `Valid (${linkStatus.token_seconds_remaining}s)`
+                    : 'Expired'}
+                </span>
+              </p>
+            </div>
 
             {/* Key display */}
             <div className="flex items-center gap-2">

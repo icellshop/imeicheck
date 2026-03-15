@@ -15,10 +15,36 @@ exports.getMyKey = async (req, res) => {
   try {
     const key = await ApiKey.findOne({
       where: { user_id: req.user.user_id, status: 'active' },
-      attributes: ['key_id', 'api_key', 'label', 'created_at', 'last_used_at'],
+      attributes: [
+        'key_id',
+        'api_key',
+        'label',
+        'created_at',
+        'last_used_at',
+        'confirmation_issued_at',
+        'confirmation_expires_at',
+        'last_linked_at',
+        'last_link_source',
+      ],
     });
     if (!key) return res.json({ active_key: null });
-    res.json({ active_key: key });
+
+    const expiresAt = key.confirmation_expires_at ? new Date(key.confirmation_expires_at) : null;
+    const tokenSecondsRemaining = expiresAt
+      ? Math.max(0, Math.floor((expiresAt.getTime() - Date.now()) / 1000))
+      : 0;
+
+    res.json({
+      active_key: key,
+      link_status: {
+        linked: Boolean(key.last_linked_at),
+        linked_at: key.last_linked_at,
+        source: key.last_link_source || null,
+        token_valid: tokenSecondsRemaining > 0,
+        token_expires_at: key.confirmation_expires_at,
+        token_seconds_remaining: tokenSecondsRemaining,
+      },
+    });
   } catch (err) {
     console.error('getMyKey:', err);
     res.status(500).json({ error: 'Error fetching API key' });

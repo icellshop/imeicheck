@@ -37,6 +37,9 @@ function validateRequiredEnv() {
 
 const app = express();
 
+// Stripe webhook requires raw body for signature verification
+app.use('/api/payments/stripe-webhook', express.raw({ type: 'application/json' }));
+
 app.get('/healthz', (req, res) => {
   res.status(200).json({ ok: true });
 });
@@ -122,7 +125,7 @@ app.use('/api', (req, res, next) => {
 });
 
 // =========== SPA FALLBACK (REACT ROUTER) ===========
-app.get('/{*path}', (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 

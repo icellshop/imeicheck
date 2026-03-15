@@ -43,6 +43,14 @@ const ApiKey = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    last_linked_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    last_link_source: {
+      type: DataTypes.STRING(50),
+      allowNull: true,
+    },
     revoked_at: {
       type: DataTypes.DATE,
       allowNull: true,

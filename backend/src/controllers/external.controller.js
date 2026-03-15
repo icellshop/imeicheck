@@ -139,6 +139,9 @@ async function resolveExternalAuth({ confirmation_token, api_key, email }) {
 exports.initConfirmation = async (req, res) => {
   try {
     const { api_key, email } = req.body;
+    const linkSource = String(
+      req.body?.request_source || req.get('x-client-app') || 'probuyer'
+    ).trim().slice(0, 50) || 'probuyer';
 
     const authResult = await resolveExternalAuth({ api_key, email });
     if (authResult.error) {
@@ -152,6 +155,8 @@ exports.initConfirmation = async (req, res) => {
       confirmation_token: confirmationToken,
       confirmation_issued_at: new Date(),
       confirmation_expires_at: expiresAt,
+      last_linked_at: new Date(),
+      last_link_source: linkSource,
     });
 
     return res.json({
