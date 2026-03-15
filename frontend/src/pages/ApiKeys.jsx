@@ -86,6 +86,7 @@ export default function ApiKeys() {
   }
 
   const externalUrl = `${API_BASE}/api/external/imei-check`;
+  const initUrl = `${API_BASE}/api/external/init`;
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -216,35 +217,58 @@ export default function ApiKeys() {
       <div className="bg-slate-900 rounded-xl border border-slate-800 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-slate-300">Integration Guide</h3>
         <p className="text-xs text-slate-400">
-          Make a <span className="text-white font-mono">POST</span> request from your platform to the
-          endpoint below. Both your <strong className="text-slate-200">API key</strong> and your
-          registered <strong className="text-slate-200">email</strong> must match.
+          Probuyer should first confirm the API key belongs to the email, then use the returned
+          short-lived confirmation token to submit IMEI requests.
         </p>
 
         <div>
-          <p className="text-xs text-slate-500 mb-1">Endpoint</p>
+          <p className="text-xs text-slate-500 mb-1">Step 1: Confirm key ownership</p>
+          <code className="block rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-xs font-mono text-indigo-300 break-all">
+            POST {initUrl}
+          </code>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Confirmation body (JSON)</p>
+          <pre className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-3 text-xs font-mono text-slate-200 overflow-x-auto">{`{
+  "api_key":    "${activeKey ? maskKey(activeKey.api_key) : '<your-api-key>'}",
+  "email":      "${user?.email || '<your-registered-email>'}"
+}`}</pre>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Confirmation response</p>
+          <pre className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-3 text-xs font-mono text-slate-200 overflow-x-auto">{`{
+  "success": true,
+  "confirmed": true,
+  "email": "${user?.email || '<your-registered-email>'}",
+  "confirmation_token": "<short-lived-token>",
+  "expires_in": 600
+}`}</pre>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500 mb-1">Step 2: Run IMEI check</p>
           <code className="block rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-xs font-mono text-indigo-300 break-all">
             POST {externalUrl}
           </code>
         </div>
 
         <div>
-          <p className="text-xs text-slate-500 mb-1">Request body (JSON)</p>
+          <p className="text-xs text-slate-500 mb-1">IMEI request body (JSON)</p>
           <pre className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-3 text-xs font-mono text-slate-200 overflow-x-auto">{`{
-  "api_key":    "${activeKey ? maskKey(activeKey.api_key) : '<your-api-key>'}",
-  "email":      "${user?.email || '<your-registered-email>'}",
+  "confirmation_token": "<short-lived-token>",
   "service_id": 1,
-  "imei":       "359998765432100"
+  "imei": "359998765432100"
 }`}</pre>
         </div>
 
         <div>
           <p className="text-xs text-slate-500 mb-1">Bulk (up to 50 IMEIs)</p>
           <pre className="rounded-lg bg-slate-800 border border-slate-700 px-3 py-3 text-xs font-mono text-slate-200 overflow-x-auto">{`{
-  "api_key":    "<your-api-key>",
-  "email":      "<your-email>",
+  "confirmation_token": "<short-lived-token>",
   "service_id": 1,
-  "imeis":      ["359998765432100", "359998765432101"]
+  "imeis": ["359998765432100", "359998765432101"]
 }`}</pre>
         </div>
 

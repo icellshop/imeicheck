@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const apikeyController = require('../controllers/apikey.controller');
 const auth = require('../middleware/auth');
-const onlyAdmin = require('../middleware/onlyAdmin');
+const onlySuperAdmin = require('../middleware/onlySuperAdmin');
 
 // User: get own active key
 router.get('/me', auth, apikeyController.getMyKey);
@@ -14,6 +14,6 @@ router.post('/', auth, apikeyController.createKey);
 router.delete('/revoke', auth, apikeyController.revokeKey);
 
 // Super-admin: audit log of all keys ever issued
-router.get('/admin/history', auth, onlyAdmin, apikeyController.adminHistory);
+router.get('/admin/history', auth, onlySuperAdmin, apikeyController.adminHistory);
 
 module.exports = router;

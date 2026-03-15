@@ -31,6 +31,7 @@ const Service = require('../models/service');
 const IMEIOrder = require('../models/imei_order');
 const sequelize = require('../../config/db');
 const getUserBalance = require('../utils/getUserBalance');
+const crypto = require('crypto');
 
 let fetch;
 try {
@@ -39,44 +40,141 @@ try {
   fetch = global.fetch;
 }
 
+function generateConfirmationToken() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+function getConfirmationExpiry() {
+  const expiry = new Date();
+  expiry.setMinutes(expiry.getMinutes() + 10);
+  return expiry;
+}
+
+async function resolveExternalAuth({ confirmation_token, api_key, email }) {
+  if (confirmation_token) {
+    const keyRecord = await ApiKey.findOne({
+      where: { confirmation_token, status: 'active' },
+    });
+
+    if (!keyRecord) {
+      return { error: { status: 401, body: { success: false, error: 'Invalid confirmation token.' } } };
+    }
+
+    if (!keyRecord.confirmation_expires_at || new Date(keyRecord.confirmation_expires_at) < new Date()) {
+      await keyRecord.update({
+        confirmation_token: null,
+        confirmation_issued_at: null,
+        confirmation_expires_at: null,
+      });
+      return { error: { status: 401, body: { success: false, error: 'Confirmation token expired.' } } };
+    }
+
+    const user = await User.findByPk(keyRecord.user_id);
+    if (!user) {
+      return { error: { status: 401, body: { success: false, error: 'User account not found.' } } };
+    }
+
+    if (!user.email_verified) {
+      return { error: { status: 403, body: { success: false, error: 'Account email is not verified.' } } };
+    }
+
+    if (email && user.email.toLowerCase() !== String(email).trim().toLowerCase()) {
+      return { error: { status: 401, body: { success: false, error: 'Email does not match the API key owner.' } } };
+    }
+
+    return { keyRecord, user, usedConfirmationToken: true };
+  }
+
+  if (!api_key || !email) {
+    return {
+      error: {
+        status: 400,
+        body: { success: false, error: 'Provide confirmation_token or api_key + email.' },
+      },
+    };
+  }
+
+  const keyRecord = await ApiKey.findOne({ where: { api_key, status: 'active' } });
+  if (!keyRecord) {
+    return { error: { status: 401, body: { success: false, error: 'Invalid or revoked API key.' } } };
+  }
+
+  const user = await User.findByPk(keyRecord.user_id);
+  if (!user) {
+    return { error: { status: 401, body: { success: false, error: 'User account not found.' } } };
+  }
+
+  if (user.email.toLowerCase() !== String(email).trim().toLowerCase()) {
+    return {
+      error: {
+        status: 401,
+        body: { success: false, error: 'Email does not match the API key owner.' },
+      },
+    };
+  }
+
+  if (!user.email_verified) {
+    return { error: { status: 403, body: { success: false, error: 'Account email is not verified.' } } };
+  }
+
+  return { keyRecord, user, usedConfirmationToken: false };
+}
+
+// ── POST /api/external/init ────────────────────────────────────────────────
+exports.initConfirmation = async (req, res) => {
+  try {
+    const { api_key, email } = req.body;
+
+    const authResult = await resolveExternalAuth({ api_key, email });
+    if (authResult.error) {
+      return res.status(authResult.error.status).json(authResult.error.body);
+    }
+
+    const confirmationToken = generateConfirmationToken();
+    const expiresAt = getConfirmationExpiry();
+
+    await authResult.keyRecord.update({
+      confirmation_token: confirmationToken,
+      confirmation_issued_at: new Date(),
+      confirmation_expires_at: expiresAt,
+    });
+
+    return res.json({
+      success: true,
+      confirmed: true,
+      email: authResult.user.email,
+      confirmation_token: confirmationToken,
+      expires_at: expiresAt.toISOString(),
+      expires_in: 600,
+    });
+  } catch (err) {
+    console.error('initConfirmation error:', err);
+    return res.status(500).json({ success: false, error: 'Internal server error.' });
+  }
+};
+
 // ── POST /api/external/imei-check ───────────────────────────────────────────
 exports.externalImeiCheck = async (req, res) => {
   let transaction = null;
 
   try {
-    const { api_key, email, service_id, imei, imeis } = req.body;
+    const { confirmation_token, api_key, email, service_id, imei, imeis } = req.body;
 
     // ── 1. Basic input validation ──────────────────────────────────────────
-    if (!api_key || !email || !service_id) {
+    if (!service_id || (!confirmation_token && (!api_key || !email))) {
       return res.status(400).json({
         success: false,
-        error: 'api_key, email, and service_id are required.',
+        error: 'service_id and either confirmation_token or api_key + email are required.',
       });
     }
 
-    // ── 2. Validate API key exists and is active ───────────────────────────
-    const keyRecord = await ApiKey.findOne({ where: { api_key, status: 'active' } });
-    if (!keyRecord) {
-      return res.status(401).json({ success: false, error: 'Invalid or revoked API key.' });
+    // ── 2. Validate auth via confirmation token or raw api key ─────────────
+    const authResult = await resolveExternalAuth({ confirmation_token, api_key, email });
+    if (authResult.error) {
+      return res.status(authResult.error.status).json(authResult.error.body);
     }
 
-    // ── 3. Validate that email matches the key owner ───────────────────────
-    const user = await User.findByPk(keyRecord.user_id);
-    if (!user) {
-      return res.status(401).json({ success: false, error: 'User account not found.' });
-    }
-    if (user.email.toLowerCase() !== String(email).trim().toLowerCase()) {
-      return res.status(401).json({
-        success: false,
-        error: 'Email does not match the API key owner.',
-      });
-    }
-    if (!user.email_verified) {
-      return res.status(403).json({
-        success: false,
-        error: 'Account email is not verified.',
-      });
-    }
+    const { keyRecord, user, usedConfirmationToken } = authResult;
 
     // ── 4. Validate service ────────────────────────────────────────────────
     const service = await Service.findByPk(service_id);
@@ -210,6 +308,14 @@ exports.externalImeiCheck = async (req, res) => {
 
     // ── 11. Get updated balance (outside transaction) ─────────────────────
     const newBalance = await getUserBalance(user.user_id);
+
+    if (usedConfirmationToken) {
+      await keyRecord.update({
+        confirmation_token: null,
+        confirmation_issued_at: null,
+        confirmation_expires_at: null,
+      });
+    }
 
     // ── 12. Respond ───────────────────────────────────────────────────────
     return res.json({

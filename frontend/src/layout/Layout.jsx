@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,6 +16,23 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isAdmin = user?.user_type === 'admin' || user?.user_type === 'superadmin';
+  const isSuperAdmin = user?.user_type === 'superadmin';
+
+  const navItems = useMemo(() => {
+    const items = [...NAV];
+
+    if (isAdmin) {
+      items.splice(1, 0, { to: '/admin/services', label: 'Services', icon: '🧩' });
+    }
+
+    if (isSuperAdmin) {
+      items.splice(1, 0, { to: '/admin/invoices', label: 'All Invoices', icon: '🗂' });
+      items.splice(1, 0, { to: '/admin/users', label: 'Users', icon: '🛠' });
+    }
+
+    return items;
+  }, [isAdmin, isSuperAdmin]);
 
   function handleLogout() {
     logout();
@@ -47,7 +64,7 @@ export default function Layout() {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-          {NAV.map(({ to, label, icon }) => (
+          {navItems.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
@@ -69,6 +86,7 @@ export default function Layout() {
         {/* User footer */}
         <div className="px-4 py-4 border-t border-slate-800 space-y-1">
           <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+          <p className="text-xs text-slate-500 uppercase tracking-wide">{user?.user_type || 'user'}</p>
           <p className="text-sm font-semibold text-emerald-400">
             Balance: ${Number(user?.balance ?? 0).toFixed(2)}
           </p>

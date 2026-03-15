@@ -3,6 +3,7 @@ const router = express.Router();
 const paymentController = require('../controllers/payment.controller');
 const auth = require('../middleware/auth');
 const onlyAdmin = require('../middleware/onlyAdmin');
+const onlySuperAdmin = require('../middleware/onlySuperAdmin');
 
 // Stripe Webhook (DEBE IR ANTES DE express.json en app.js o aquí con raw body)
 router.post(
@@ -27,13 +28,13 @@ router.post('/manual', auth, onlyAdmin, paymentController.createManualPayment);
 router.get('/my', auth, paymentController.getMyPayments);
 
 // TODOS los pagos (admin)
-router.get('/all', auth, onlyAdmin, paymentController.getAllPayments);
+router.get('/all', auth, onlySuperAdmin, paymentController.getAllPayments);
 
 // Obtener pago por ID (admin/superadmin)
 router.get('/:id', auth, onlyAdmin, paymentController.getPaymentById);
 
 // Listar pagos de un usuario específico (admin)
-router.get('/user/:user_id', auth, onlyAdmin, paymentController.getPaymentsByUser);
+router.get('/user/:user_id', auth, onlySuperAdmin, paymentController.getPaymentsByUser);
 
 // Actualizar un pago (admin)
 router.put('/:id', auth, onlyAdmin, paymentController.updatePayment);

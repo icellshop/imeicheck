@@ -3,6 +3,7 @@ const router = express.Router();
 const userController = require('../controllers/user.controller');
 const auth = require('../middleware/auth');
 const onlyAdmin = require('../middleware/onlyAdmin');
+const onlySuperAdmin = require('../middleware/onlySuperAdmin');
 
 // Registro y login (públicos)
 router.post('/register', userController.register);
@@ -24,7 +25,7 @@ router.get('/search', onlyAdmin, userController.searchByEmail);
 
 // Admin list y update type
 router.get('/admin-list', auth, onlyAdmin, userController.adminList);
-router.put('/:id/update-type', auth, onlyAdmin, userController.updateType);
+router.put('/:id/update-type', auth, onlySuperAdmin, userController.updateType);
 
 // Perfil propio (accesible para cualquier usuario autenticado)
 router.get('/me', auth, userController.me);
@@ -33,10 +34,10 @@ router.put('/me', auth, userController.updateMe);
 // Admin/superadmin: gestiona usuarios
 router.get('/', auth, onlyAdmin, userController.getAllUsers);
 router.get('/:id', auth, onlyAdmin, userController.getUserById);
-router.put('/:id', auth, onlyAdmin, userController.updateUser);
-router.delete('/:id', auth, onlyAdmin, userController.deleteUser);
+router.put('/:id', auth, onlySuperAdmin, userController.updateUser);
+router.delete('/:id', auth, onlySuperAdmin, userController.deleteUser);
 
 // Recarga manual (sólo admin, placeholder)
-router.post('/:id/recharge', auth, onlyAdmin, userController.rechargeUserBalance);
+router.post('/:id/recharge', auth, onlySuperAdmin, userController.rechargeUserBalance);
 
 module.exports = router;

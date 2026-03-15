@@ -31,6 +31,18 @@ const ApiKey = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    confirmation_token: {
+      type: DataTypes.STRING(128),
+      allowNull: true,
+    },
+    confirmation_issued_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    confirmation_expires_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
     revoked_at: {
       type: DataTypes.DATE,
       allowNull: true,

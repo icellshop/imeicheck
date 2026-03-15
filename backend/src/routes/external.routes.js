@@ -7,9 +7,13 @@ const externalController = require('../controllers/external.controller');
  * No JWT auth — authentication is done via api_key + email in the request body.
  * Rate limiting should be applied at the reverse-proxy/infrastructure level.
  *
+ * POST /api/external/init
+ * Body: { api_key, email }
+ *
  * POST /api/external/imei-check
- * Body: { api_key, email, service_id, imei?, imeis? }
+ * Body: { confirmation_token?, api_key?, email?, service_id, imei?, imeis? }
  */
+router.post('/init', externalController.initConfirmation);
 router.post('/imei-check', externalController.externalImeiCheck);
 
 module.exports = router;
