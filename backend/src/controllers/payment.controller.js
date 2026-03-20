@@ -222,7 +222,7 @@ exports.stripeWebhook = async (req, res) => {
     if (metadata.imei && metadata.service_id) {
       const imei = metadata.imei;
       const service_id = metadata.service_id;
-      const user_id = 999;
+      const user_id = null; // guest orders have no user_id
       const user_type = 'guest';
       const username = 'guest';
       const guest_email = metadata.email || null;
@@ -235,7 +235,7 @@ exports.stripeWebhook = async (req, res) => {
           where: { stripe_checkout_session_id: session.id },
           defaults: {
             order_id: null,
-            user_id,
+            user_id: null, // guest orders have no user_id
             amount: 0,
             currency: 'usd',
             status: 'pending',
@@ -260,7 +260,7 @@ exports.stripeWebhook = async (req, res) => {
         const price = user_type === 'guest' ? service.price_guest : service.price_registered;
 
         const imeiOrder = await ImeiOrder.create({
-          user_id,
+          user_id: null, // guest orders have no user_id
           imei,
           service_id,
           status: 'pending',
