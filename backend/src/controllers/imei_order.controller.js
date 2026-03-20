@@ -26,6 +26,69 @@ function getStripeClient() {
   }
 }
 
+async function tryFinalizePendingGuestOrder(order) {
+  if (!order || order.status !== 'pending' || order.result) return order;
+
+  const createdAt = order.created_at ? new Date(order.created_at).getTime() : Date.now();
+  const ageMs = Date.now() - createdAt;
+  if (ageMs < 15000) return order;
+
+  const service = await Service.findByPk(order.service_id);
+  if (!service) {
+    order.status = 'failed';
+    order.result = JSON.stringify({ error: 'Servicio no encontrado para finalizar orden pendiente' });
+    await order.save();
+    return order;
+  }
+
+  try {
+    const payload = {
+      key: process.env.IMEI_API_KEY,
+      imei: order.imei,
+      service: order.service_id,
+    };
+    const apiRes = await fetch(process.env.IMEI_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const rawBody = await apiRes.text();
+    let apiData;
+    try {
+      apiData = rawBody ? JSON.parse(rawBody) : {};
+    } catch (_parseErr) {
+      apiData = { raw: rawBody };
+    }
+
+    order.result = typeof apiData.result === 'string'
+      ? apiData.result
+      : JSON.stringify(apiData.result || apiData);
+    order.status = (apiRes.ok && (apiData.success === true || apiData.status === 'success')) ? 'completed' : 'failed';
+    await order.save();
+
+    if (order.status === 'completed' && order.guest_email) {
+      await sendMail({
+        to: order.guest_email,
+        type: 'imei_paid_guest',
+        data: {
+          imei: order.imei,
+          service: order.service_name_at_order || service.service_name,
+          price: Number(order.price_used || service.price_guest || 0),
+          currency: order.currency || 'USD',
+          result: typeof apiData.result === 'string' ? apiData.result : order.result,
+        },
+      });
+    }
+  } catch (apiErr) {
+    order.status = 'failed';
+    order.result = JSON.stringify({ error: 'No se pudo contactar la API externa', detail: apiErr.message });
+    await order.save();
+  }
+
+  return order;
+}
+
 async function recoverGuestOrderFromStripeSession(sessionId, ipAddress) {
   const stripe = getStripeClient();
   if (!stripe) return { recovered: false, reason: 'stripe_not_configured' };
@@ -501,14 +564,24 @@ exports.getOrderById = async (req, res) => {
 exports.getOrderBySession = async (req, res) => {
   try {
     const { session_id } = req.params;
+    let recoveryAttempt = null;
     let payment = await Payment.findOne({ where: { stripe_checkout_session_id: session_id } });
 
     if (!payment) {
-      await recoverGuestOrderFromStripeSession(session_id, req.ip);
+      recoveryAttempt = await recoverGuestOrderFromStripeSession(session_id, req.ip);
       payment = await Payment.findOne({ where: { stripe_checkout_session_id: session_id } });
     }
 
     if (!payment) {
+      if (recoveryAttempt && ['missing_metadata_for_imei_order', 'service_not_available', 'invalid_service_price', 'recovery_failed', 'stripe_not_configured'].includes(recoveryAttempt.reason)) {
+        return res.json({
+          status: 'failed',
+          result: JSON.stringify({ error: `No se pudo recuperar la orden pagada: ${recoveryAttempt.reason}` }),
+          imei: null,
+          service: null,
+          created_at: null,
+        });
+      }
       return res.status(202).json({
         status: 'pending',
         result: null,
@@ -520,11 +593,20 @@ exports.getOrderBySession = async (req, res) => {
     }
 
     if (!payment.order_id) {
-      await recoverGuestOrderFromStripeSession(session_id, req.ip);
+      recoveryAttempt = await recoverGuestOrderFromStripeSession(session_id, req.ip);
       payment = await Payment.findOne({ where: { stripe_checkout_session_id: session_id } });
     }
 
     if (!payment || !payment.order_id) {
+      if (recoveryAttempt && ['missing_metadata_for_imei_order', 'service_not_available', 'invalid_service_price', 'recovery_failed', 'stripe_not_configured'].includes(recoveryAttempt.reason)) {
+        return res.json({
+          status: 'failed',
+          result: JSON.stringify({ error: `No se pudo completar la orden pagada: ${recoveryAttempt.reason}` }),
+          imei: null,
+          service: null,
+          created_at: payment?.created_at || null,
+        });
+      }
       return res.status(202).json({
         status: 'pending',
         result: null,
@@ -535,7 +617,7 @@ exports.getOrderBySession = async (req, res) => {
       });
     }
 
-    const order = await IMEIOrder.findByPk(payment.order_id);
+    let order = await IMEIOrder.findByPk(payment.order_id);
     if (!order) {
       return res.status(202).json({
         status: 'pending',
@@ -546,6 +628,9 @@ exports.getOrderBySession = async (req, res) => {
         message: 'IMEI order record is still being created',
       });
     }
+
+    order = await tryFinalizePendingGuestOrder(order);
+
     let serviceName = order.service_name_at_order;
     if (!serviceName && order.service_id) {
       const service = await Service.findByPk(order.service_id);
