@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const sequelize = require('./config/db');
 const path = require('path');
+const fs = require('fs');
 
 dotenv.config();
 
@@ -120,6 +121,32 @@ if (process.env.ENABLE_LEGACY_STATIC === 'true') {
 
 // =========== SERVE REACT FRONTEND (MONOREPO) ===========
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+function resolveFrontendFile(fileName) {
+  const distPath = path.join(__dirname, '../frontend/dist', fileName);
+  if (fs.existsSync(distPath)) return distPath;
+
+  const publicPath = path.join(__dirname, '../frontend/public', fileName);
+  if (fs.existsSync(publicPath)) return publicPath;
+
+  return null;
+}
+
+app.get('/sitemap.xml', (req, res) => {
+  const filePath = resolveFrontendFile('sitemap.xml');
+  if (!filePath) {
+    return res.status(404).type('application/xml').send('<?xml version="1.0" encoding="UTF-8"?><error>sitemap not found</error>');
+  }
+  return res.type('application/xml').sendFile(filePath);
+});
+
+app.get('/robots.txt', (req, res) => {
+  const filePath = resolveFrontendFile('robots.txt');
+  if (!filePath) {
+    return res.status(404).type('text/plain').send('User-agent: *\nDisallow: /\n');
+  }
+  return res.type('text/plain').sendFile(filePath);
+});
 
 // =========== 404 HANDLER (API ROUTES ONLY) ===========
 app.use('/api', (req, res, next) => {

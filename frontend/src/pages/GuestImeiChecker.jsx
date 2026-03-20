@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { apiFetch } from '../lib/api';
 import BrandLogoLink from '../components/BrandLogoLink';
+import Seo from '../components/Seo';
 
 function cleanHtml(text) {
   if (!text) return '';
@@ -13,6 +14,18 @@ function cleanHtml(text) {
 }
 
 export default function GuestImeiChecker() {
+  const pageUrl = 'https://imeicheck2.com/guest-checker';
+  const checkerSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    name: 'Guest IMEI Checker',
+    applicationCategory: 'BusinessApplication',
+    operatingSystem: 'Web',
+    url: pageUrl,
+    description:
+      'Guest IMEI checker for used iPhone safety: verify stolen reports, blacklist status, SIM lock, and service-backed checks before buying or selling.',
+  };
+
   const [params] = useSearchParams();
   const paymentStatus = params.get('payment');
   const sessionId = params.get('session_id');
@@ -135,6 +148,13 @@ export default function GuestImeiChecker() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white px-4 py-8">
+      <Seo
+        title="Guest IMEI Checker | Verify Stolen, Blacklist & Carrier Lock"
+        description="Run a guest IMEI check before buying or selling a used iPhone. Pay per check and verify blacklist, stolen report risk, and SIM lock status."
+        canonical={pageUrl}
+        jsonLd={checkerSchema}
+      />
+
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center justify-between gap-3">
           <BrandLogoLink className="inline-flex items-center" imageClassName="h-10 w-auto object-contain" fallbackClassName="text-xl font-bold text-white" />

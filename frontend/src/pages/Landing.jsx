@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import BrandLogoLink from '../components/BrandLogoLink';
+import Seo from '../components/Seo';
 
 const EXAMPLES = [
   {
@@ -20,8 +21,47 @@ const EXAMPLES = [
 ];
 
 export default function Landing() {
+  const pageUrl = 'https://imeicheck2.com/';
+
+  const pageSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: 'IMEI Check for Used iPhone Safety',
+    description:
+      'Run an IMEI check before buying or selling any used iPhone to detect blacklisted or reported devices.',
+    url: pageUrl,
+    mainEntity: {
+      '@type': 'FAQPage',
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'Why check IMEI before buying a used iPhone?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'An IMEI check helps detect blacklisted, stolen, or carrier-locked devices before payment.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'If an iPhone says no SIM restriction, is it always safe?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'No. Even with no SIM restrictions, the phone can still be reported lost, blacklisted, or have iCloud/FMI risk.',
+          },
+        },
+      ],
+    },
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-white">
+      <Seo
+        title="IMEI Check Before Buying Used iPhone | Stolen, Blacklisted & SIM Lock"
+        description="Copy the IMEI and check it before buying or selling any used iPhone. Detect stolen or reported devices, blacklist status, SIM lock, and iCloud/FMI risks."
+        canonical={pageUrl}
+        jsonLd={pageSchema}
+      />
+
       <header className="border-b border-slate-800 bg-slate-950/90 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <BrandLogoLink className="inline-flex items-center" imageClassName="h-10 w-auto object-contain" fallbackClassName="text-xl font-bold" />
@@ -99,6 +139,71 @@ export default function Landing() {
                 </p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4">
+          <h3 className="text-2xl font-semibold">Buying or selling a used iPhone? Check IMEI first.</h3>
+          <p className="text-sm text-slate-300 leading-6">
+            If someone sends you an IMEI number, run a check before payment. A device can look clean at first
+            glance and still have hidden risk. This is especially important in second-hand marketplaces,
+            social media deals, and local meetups.
+          </p>
+          <ul className="list-disc list-inside space-y-2 text-sm text-slate-300">
+            <li>Confirm blacklist / reported lost or stolen records.</li>
+            <li>Confirm iCloud / FMI / activation risk where available.</li>
+            <li>Confirm carrier lock status before international resale.</li>
+            <li>Verify model and service details from trusted report sources.</li>
+          </ul>
+          <p className="text-sm text-amber-300">
+            Important: “No SIM restrictions” does not always mean safe. A phone can still be reported,
+            blacklisted, or have account-related lock issues.
+          </p>
+          <div className="pt-1">
+            <Link
+              to="/guest-checker"
+              className="inline-flex px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold"
+            >
+              Check IMEI Now
+            </Link>
+          </div>
+        </section>
+
+        <section className="space-y-4">
+          <h3 className="text-xl font-semibold">Used iPhone safety guides</h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-8 gap-4">
+            <Link to="/stolen-iphone-check" className="rounded-xl border border-slate-800 bg-slate-900 p-4 hover:border-slate-700 transition-colors">
+              <h4 className="text-sm font-semibold text-slate-100">Check if iPhone is stolen</h4>
+              <p className="text-xs text-slate-400 mt-2">Learn how to validate IMEI before paying a seller.</p>
+            </Link>
+            <Link to="/imei-blacklist-check" className="rounded-xl border border-slate-800 bg-slate-900 p-4 hover:border-slate-700 transition-colors">
+              <h4 className="text-sm font-semibold text-slate-100">IMEI blacklist check</h4>
+              <p className="text-xs text-slate-400 mt-2">Follow a quick process to catch reported devices early.</p>
+            </Link>
+            <Link to="/buy-used-iphone-safely" className="rounded-xl border border-slate-800 bg-slate-900 p-4 hover:border-slate-700 transition-colors">
+              <h4 className="text-sm font-semibold text-slate-100">Buy used iPhone safely</h4>
+              <p className="text-xs text-slate-400 mt-2">Use a practical checklist to reduce fraud and lock risks.</p>
+            </Link>
+            <Link to="/no-sim-restrictions-used-iphone-risk" className="rounded-xl border border-slate-800 bg-slate-900 p-4 hover:border-slate-700 transition-colors">
+              <h4 className="text-sm font-semibold text-slate-100">No SIM restrictions risk</h4>
+              <p className="text-xs text-slate-400 mt-2">Learn what can still go wrong and what to verify first.</p>
+            </Link>
+            <Link to="/facebook-marketplace-iphone-imei-check" className="rounded-xl border border-slate-800 bg-slate-900 p-4 hover:border-slate-700 transition-colors">
+              <h4 className="text-sm font-semibold text-slate-100">Facebook Marketplace IMEI</h4>
+              <p className="text-xs text-slate-400 mt-2">Use a pre-meetup checklist before paying marketplace sellers.</p>
+            </Link>
+            <Link to="/wholesale-bulk-iphone-imei-check" className="rounded-xl border border-slate-800 bg-slate-900 p-4 hover:border-slate-700 transition-colors">
+              <h4 className="text-sm font-semibold text-slate-100">Wholesale bulk IMEI checks</h4>
+              <p className="text-xs text-slate-400 mt-2">Reduce batch risk before buying used iPhone inventory.</p>
+            </Link>
+            <Link to="/craigslist-offerup-iphone-imei-check" className="rounded-xl border border-slate-800 bg-slate-900 p-4 hover:border-slate-700 transition-colors">
+              <h4 className="text-sm font-semibold text-slate-100">Craigslist/OfferUp meetup IMEI</h4>
+              <p className="text-xs text-slate-400 mt-2">Verify local deal iPhones before in-person payment.</p>
+            </Link>
+            <Link to="/icloud-fmi-check-used-iphone" className="rounded-xl border border-slate-800 bg-slate-900 p-4 hover:border-slate-700 transition-colors">
+              <h4 className="text-sm font-semibold text-slate-100">iCloud / FMI check</h4>
+              <p className="text-xs text-slate-400 mt-2">Review activation-related risk before buying used iPhone.</p>
+            </Link>
           </div>
         </section>
       </main>

@@ -7,6 +7,14 @@ import Landing from './pages/Landing';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import GuestImeiChecker from './pages/GuestImeiChecker';
+import StolenIphoneCheck from './pages/StolenIphoneCheck';
+import ImeiBlacklistCheck from './pages/ImeiBlacklistCheck';
+import BuyUsedIphoneSafely from './pages/BuyUsedIphoneSafely';
+import NoSimRestrictionsIphoneRisk from './pages/NoSimRestrictionsIphoneRisk';
+import FacebookMarketplaceImeiCheck from './pages/FacebookMarketplaceImeiCheck';
+import WholesaleBulkIphoneImeiCheck from './pages/WholesaleBulkIphoneImeiCheck';
+import CraigslistOfferupImeiMeetupCheck from './pages/CraigslistOfferupImeiMeetupCheck';
+import IcloudFmiCheckUsedIphone from './pages/IcloudFmiCheckUsedIphone';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminUsers from './pages/AdminUsers';
@@ -52,6 +60,14 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/guest-checker" element={<GuestImeiChecker />} />
+          <Route path="/stolen-iphone-check" element={<StolenIphoneCheck />} />
+          <Route path="/imei-blacklist-check" element={<ImeiBlacklistCheck />} />
+          <Route path="/buy-used-iphone-safely" element={<BuyUsedIphoneSafely />} />
+          <Route path="/no-sim-restrictions-used-iphone-risk" element={<NoSimRestrictionsIphoneRisk />} />
+          <Route path="/facebook-marketplace-iphone-imei-check" element={<FacebookMarketplaceImeiCheck />} />
+          <Route path="/wholesale-bulk-iphone-imei-check" element={<WholesaleBulkIphoneImeiCheck />} />
+          <Route path="/craigslist-offerup-iphone-imei-check" element={<CraigslistOfferupImeiMeetupCheck />} />
+          <Route path="/icloud-fmi-check-used-iphone" element={<IcloudFmiCheckUsedIphone />} />
           <Route
             element={
               <ProtectedRoute>
