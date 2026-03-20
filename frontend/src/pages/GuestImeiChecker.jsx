@@ -4,6 +4,8 @@ import { apiFetch } from '../lib/api';
 import BrandLogoLink from '../components/BrandLogoLink';
 import Seo from '../components/Seo';
 
+const STRIPE_MIN_GUEST_AMOUNT = 0.6;
+
 function cleanHtml(text) {
   if (!text) return '';
   return String(text)
@@ -66,6 +68,11 @@ export default function GuestImeiChecker() {
     [services, serviceId]
   );
 
+  const selectedServicePrice = Number(selectedService?.price_guest || 0);
+  const selectedServiceBelowMinimum = Boolean(
+    selectedService && selectedServicePrice > 0 && selectedServicePrice < STRIPE_MIN_GUEST_AMOUNT
+  );
+
   useEffect(() => {
     if (!(paymentStatus === 'success' && sessionId)) return;
 
@@ -120,6 +127,10 @@ export default function GuestImeiChecker() {
     }
     if (!guestEmail.trim()) {
       setError('Email is required.');
+      return;
+    }
+    if (selectedServiceBelowMinimum) {
+      setError(`This guest service is below Stripe's minimum checkout amount of $${STRIPE_MIN_GUEST_AMOUNT.toFixed(2)} USD. Please choose another service.`);
       return;
     }
 
@@ -210,7 +221,7 @@ export default function GuestImeiChecker() {
               <option value="">{loadingServices ? 'Loading services…' : 'Select service'}</option>
               {services.map((service) => (
                 <option key={service.service_id} value={service.service_id}>
-                  [{service.service_id}] {service.service_name} · ${Number(service.price_guest || 0).toFixed(2)}
+                  [{service.service_id}] {service.service_name} · ${Number(service.price_guest || 0).toFixed(2)}{Number(service.price_guest || 0) < STRIPE_MIN_GUEST_AMOUNT ? ' - unavailable for Stripe guest checkout' : ''}
                 </option>
               ))}
             </select>
@@ -233,9 +244,15 @@ export default function GuestImeiChecker() {
             </div>
           )}
 
+          {selectedServiceBelowMinimum && (
+            <div className="text-xs rounded-lg bg-amber-950 border border-amber-700 px-3 py-2 text-amber-300">
+              Stripe guest checkout currently requires at least ${STRIPE_MIN_GUEST_AMOUNT.toFixed(2)} USD. This service is too low-priced for direct guest payment.
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={loadingCheckout || loadingServices}
+            disabled={loadingCheckout || loadingServices || selectedServiceBelowMinimum}
             className="w-full rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 px-4 py-2.5 text-sm font-semibold"
           >
             {loadingCheckout ? 'Redirecting to Stripe…' : 'Pay & Run IMEI Check'}

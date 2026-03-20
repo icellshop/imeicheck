@@ -1,10 +1,12 @@
 const IMEIOrder = require('../models/imei_order');
 const Service = require('../models/service');
 const User = require('../models/user');
+const Payment = require('../models/payment');
 const sequelize = require('../../config/db');
 const { Op } = require('sequelize');
 const { sendMail } = require('../utils/mailer');
 const getUserBalance = require('../utils/getUserBalance');
+const Stripe = require('stripe');
 
 // Cargar fetch nativo o node-fetch según versión de Node
 let fetch;
@@ -12,6 +14,165 @@ try {
   fetch = global.fetch || require('node-fetch');
 } catch (e) {
   fetch = global.fetch;
+}
+
+function getStripeClient() {
+  const secretKey = (process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!secretKey) return null;
+  try {
+    return Stripe(secretKey);
+  } catch (_err) {
+    return null;
+  }
+}
+
+async function recoverGuestOrderFromStripeSession(sessionId, ipAddress) {
+  const stripe = getStripeClient();
+  if (!stripe) return { recovered: false, reason: 'stripe_not_configured' };
+
+  let session;
+  try {
+    session = await stripe.checkout.sessions.retrieve(sessionId);
+  } catch (_err) {
+    return { recovered: false, reason: 'session_not_found_in_stripe' };
+  }
+
+  if (!session || session.payment_status !== 'paid') {
+    return { recovered: false, reason: 'session_not_paid_yet' };
+  }
+
+  const metadata = session.metadata || {};
+  const imei = metadata.imei;
+  const serviceId = metadata.service_id;
+  const guestEmail = metadata.email || null;
+
+  if (!imei || !serviceId) {
+    return { recovered: false, reason: 'missing_metadata_for_imei_order' };
+  }
+
+  let tx;
+  try {
+    tx = await sequelize.transaction();
+
+    const [paymentRecord, createdPayment] = await Payment.findOrCreate({
+      where: { stripe_checkout_session_id: sessionId },
+      defaults: {
+        order_id: null,
+        user_id: 999,
+        amount: 0,
+        currency: (session.currency || 'usd').toUpperCase(),
+        status: 'pending',
+        payment_method: 'stripe',
+        payment_reference: 'stripe_checkout_imei_recovered',
+        stripe_checkout_session_id: sessionId,
+        stripe_payment_intent_id: session.payment_intent || null,
+        ip_address: ipAddress || null,
+        error_message: null,
+      },
+      transaction: tx,
+      lock: tx.LOCK.UPDATE,
+    });
+
+    if (!createdPayment && paymentRecord.order_id) {
+      await tx.commit();
+      return { recovered: true, reason: 'order_already_linked' };
+    }
+
+    const service = await Service.findByPk(serviceId, { transaction: tx });
+    if (!service || !service.active) {
+      await tx.rollback();
+      return { recovered: false, reason: 'service_not_available' };
+    }
+
+    const priceUsed = Number(service.price_guest || 0);
+    if (!Number.isFinite(priceUsed) || priceUsed <= 0) {
+      await tx.rollback();
+      return { recovered: false, reason: 'invalid_service_price' };
+    }
+
+    let order = null;
+    if (paymentRecord.order_id) {
+      order = await IMEIOrder.findByPk(paymentRecord.order_id, { transaction: tx, lock: tx.LOCK.UPDATE });
+    }
+
+    if (!order) {
+      order = await IMEIOrder.create({
+        user_id: 999,
+        imei,
+        service_id: serviceId,
+        status: 'pending',
+        result: null,
+        guest_email: guestEmail,
+        price_used: priceUsed,
+        user_type_at_order: 'guest',
+        service_name_at_order: service.service_name,
+        currency: (session.currency || 'usd').toUpperCase(),
+        ip_address: ipAddress || null,
+        payment_intent_id: session.payment_intent || null,
+        request_source: 'imeicheck2',
+      }, { transaction: tx });
+    }
+
+    paymentRecord.order_id = order.order_id;
+    paymentRecord.amount = priceUsed;
+    paymentRecord.currency = (session.currency || 'usd').toUpperCase();
+    paymentRecord.status = 'approved';
+    paymentRecord.payment_method = 'stripe';
+    paymentRecord.payment_reference = 'stripe_checkout_imei_recovered';
+    paymentRecord.stripe_payment_intent_id = session.payment_intent || paymentRecord.stripe_payment_intent_id;
+    paymentRecord.error_message = null;
+    await paymentRecord.save({ transaction: tx });
+
+    await tx.commit();
+
+    try {
+      const payload = {
+        key: process.env.IMEI_API_KEY,
+        imei,
+        service: serviceId,
+      };
+      const apiRes = await fetch(process.env.IMEI_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const apiData = await apiRes.json();
+
+      const resultClean = typeof apiData.result === 'string'
+        ? apiData.result
+        : JSON.stringify(apiData.result || apiData);
+
+      order.result = resultClean;
+      order.status = (apiData.success === true || apiData.status === 'success') ? 'completed' : 'failed';
+      await order.save();
+
+      if (guestEmail && order.status === 'completed' && apiData.result) {
+        await sendMail({
+          to: guestEmail,
+          type: 'imei_paid_guest',
+          data: {
+            imei,
+            service: service.service_name,
+            price: priceUsed,
+            currency: (session.currency || 'usd').toUpperCase(),
+            result: apiData.result,
+          },
+        });
+      }
+    } catch (apiErr) {
+      order.status = 'failed';
+      order.result = JSON.stringify({ error: 'No se pudo contactar la API externa', detail: apiErr.message });
+      await order.save();
+    }
+
+    return { recovered: true, reason: 'recovered_from_stripe_session' };
+  } catch (err) {
+    if (tx) {
+      try { await tx.rollback(); } catch (_rollbackErr) {}
+    }
+    console.error('Error recovering guest order from Stripe session:', err);
+    return { recovered: false, reason: 'recovery_failed' };
+  }
 }
 
 // Crear una orden (usuario o guest), acepta varios IMEI en una sola orden
@@ -340,14 +501,50 @@ exports.getOrderById = async (req, res) => {
 exports.getOrderBySession = async (req, res) => {
   try {
     const { session_id } = req.params;
-    const Payment = require('../models/payment');
-    const payment = await Payment.findOne({ where: { stripe_checkout_session_id: session_id } });
-    if (!payment || !payment.order_id) {
-      return res.status(404).json({ error: 'Order not found for this session' });
+    let payment = await Payment.findOne({ where: { stripe_checkout_session_id: session_id } });
+
+    if (!payment) {
+      await recoverGuestOrderFromStripeSession(session_id, req.ip);
+      payment = await Payment.findOne({ where: { stripe_checkout_session_id: session_id } });
     }
+
+    if (!payment) {
+      return res.status(202).json({
+        status: 'pending',
+        result: null,
+        imei: null,
+        service: null,
+        created_at: null,
+        message: 'Payment session found by Stripe but still syncing locally',
+      });
+    }
+
+    if (!payment.order_id) {
+      await recoverGuestOrderFromStripeSession(session_id, req.ip);
+      payment = await Payment.findOne({ where: { stripe_checkout_session_id: session_id } });
+    }
+
+    if (!payment || !payment.order_id) {
+      return res.status(202).json({
+        status: 'pending',
+        result: null,
+        imei: null,
+        service: null,
+        created_at: payment.created_at || null,
+        message: 'Payment exists but IMEI order has not been linked yet',
+      });
+    }
+
     const order = await IMEIOrder.findByPk(payment.order_id);
     if (!order) {
-      return res.status(404).json({ error: 'IMEI order not found' });
+      return res.status(202).json({
+        status: 'pending',
+        result: null,
+        imei: null,
+        service: null,
+        created_at: payment.created_at || null,
+        message: 'IMEI order record is still being created',
+      });
     }
     let serviceName = order.service_name_at_order;
     if (!serviceName && order.service_id) {

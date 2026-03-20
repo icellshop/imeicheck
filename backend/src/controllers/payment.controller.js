@@ -15,6 +15,7 @@ try {
 
 // Cache temporal para resultado HTML de la API por session_id
 const imeiResultHtmlCache = {};
+const STRIPE_MIN_USD_AMOUNT = Number(process.env.STRIPE_MIN_USD_AMOUNT || 0.6);
 
 function getStripeClient() {
   const secretKey = (process.env.STRIPE_SECRET_KEY || '').trim();
@@ -39,6 +40,10 @@ function toAmountInCents(value) {
     return null;
   }
   return Math.round(numericValue * 100);
+}
+
+function getStripeMinimumAmountMessage(currency = 'USD') {
+  return `Stripe requiere un minimo aproximado de $${STRIPE_MIN_USD_AMOUNT.toFixed(2)} ${currency} para procesar el pago.`;
 }
 
 function cleanImeiResult(html) {
@@ -83,6 +88,9 @@ exports.createStripeCheckoutSession = async (req, res) => {
     const checkoutAmountCents = toAmountInCents(checkoutAmount);
     if (!checkoutAmountCents) {
       return res.status(400).json({ error: 'Monto inválido para Stripe' });
+    }
+    if (checkoutAmount < STRIPE_MIN_USD_AMOUNT) {
+      return res.status(400).json({ error: getStripeMinimumAmountMessage(String(currency).toUpperCase()) });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -148,6 +156,11 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
     const unitAmount = toAmountInCents(price);
     if (!unitAmount) {
       return res.status(400).json({ error: 'Precio de servicio inválido para Stripe' });
+    }
+    if (Number(price) < STRIPE_MIN_USD_AMOUNT) {
+      return res.status(400).json({
+        error: `${getStripeMinimumAmountMessage('USD')} Este servicio guest cuesta $${Number(price).toFixed(2)} USD. Sube el precio guest o usa un flujo sin Stripe para montos pequeños.`,
+      });
     }
 
     const frontendUrl = getFrontendUrl(req);
