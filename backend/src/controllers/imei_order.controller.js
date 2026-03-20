@@ -133,7 +133,6 @@ async function recoverGuestOrderFromStripeSession(sessionId, ipAddress) {
         error_message: null,
       },
       transaction: tx,
-      lock: tx.LOCK.UPDATE,
     });
 
     if (!createdPayment && paymentRecord.order_id) {
@@ -234,7 +233,7 @@ async function recoverGuestOrderFromStripeSession(sessionId, ipAddress) {
       try { await tx.rollback(); } catch (_rollbackErr) {}
     }
     console.error('Error recovering guest order from Stripe session:', err);
-    return { recovered: false, reason: 'recovery_failed' };
+    return { recovered: false, reason: 'recovery_failed', detail: err.message };
   }
 }
 
@@ -576,7 +575,10 @@ exports.getOrderBySession = async (req, res) => {
       if (recoveryAttempt && ['missing_metadata_for_imei_order', 'service_not_available', 'invalid_service_price', 'recovery_failed', 'stripe_not_configured'].includes(recoveryAttempt.reason)) {
         return res.json({
           status: 'failed',
-          result: JSON.stringify({ error: `No se pudo recuperar la orden pagada: ${recoveryAttempt.reason}` }),
+          result: JSON.stringify({
+            error: `No se pudo recuperar la orden pagada: ${recoveryAttempt.reason}`,
+            detail: recoveryAttempt.detail || null,
+          }),
           imei: null,
           service: null,
           created_at: null,
@@ -601,7 +603,10 @@ exports.getOrderBySession = async (req, res) => {
       if (recoveryAttempt && ['missing_metadata_for_imei_order', 'service_not_available', 'invalid_service_price', 'recovery_failed', 'stripe_not_configured'].includes(recoveryAttempt.reason)) {
         return res.json({
           status: 'failed',
-          result: JSON.stringify({ error: `No se pudo completar la orden pagada: ${recoveryAttempt.reason}` }),
+          result: JSON.stringify({
+            error: `No se pudo completar la orden pagada: ${recoveryAttempt.reason}`,
+            detail: recoveryAttempt.detail || null,
+          }),
           imei: null,
           service: null,
           created_at: payment?.created_at || null,

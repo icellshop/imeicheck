@@ -246,7 +246,6 @@ exports.stripeWebhook = async (req, res) => {
             error_message: null,
           },
           transaction: tx,
-          lock: tx.LOCK.UPDATE,
         });
         if (!created) {
           await tx.rollback();
@@ -374,7 +373,6 @@ exports.stripeWebhook = async (req, res) => {
             stripe_payment_intent_id: session.payment_intent,
           },
           transaction: tx,
-          lock: tx.LOCK.UPDATE,
         });
         if (!created) {
           await tx.rollback();
