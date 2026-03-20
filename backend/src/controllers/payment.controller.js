@@ -5,7 +5,6 @@ const Service = require('../models/service');
 const sequelize = require('../../config/db');
 const { sendMail } = require('../utils/mailer');
 const Stripe = require('stripe');
-const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 
 let fetch;
 try {
@@ -16,6 +15,31 @@ try {
 
 // Cache temporal para resultado HTML de la API por session_id
 const imeiResultHtmlCache = {};
+
+function getStripeClient() {
+  const secretKey = (process.env.STRIPE_SECRET_KEY || '').trim();
+  if (!secretKey) {
+    const error = new Error('Stripe no está configurado: falta STRIPE_SECRET_KEY');
+    error.statusCode = 503;
+    throw error;
+  }
+
+  try {
+    return Stripe(secretKey);
+  } catch (err) {
+    const error = new Error(`Stripe no está configurado correctamente: ${err.message}`);
+    error.statusCode = 503;
+    throw error;
+  }
+}
+
+function toAmountInCents(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return null;
+  }
+  return Math.round(numericValue * 100);
+}
 
 function cleanImeiResult(html) {
   if (!html) return '';
@@ -40,6 +64,7 @@ function getFrontendUrl(req) {
 
 exports.createStripeCheckoutSession = async (req, res) => {
   try {
+    const stripe = getStripeClient();
     const user_id = req.user.user_id;
     const { amount, currency = 'usd' } = req.body;
 
@@ -55,6 +80,11 @@ exports.createStripeCheckoutSession = async (req, res) => {
 
     const frontendUrl = getFrontendUrl(req);
 
+    const checkoutAmountCents = toAmountInCents(checkoutAmount);
+    if (!checkoutAmountCents) {
+      return res.status(400).json({ error: 'Monto inválido para Stripe' });
+    }
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'payment',
@@ -63,7 +93,7 @@ exports.createStripeCheckoutSession = async (req, res) => {
           price_data: {
             currency,
             product_data: { name: 'Recarga de saldo' },
-            unit_amount: Math.round(checkoutAmount * 100),
+            unit_amount: checkoutAmountCents,
           },
           quantity: 1,
         },
@@ -81,12 +111,13 @@ exports.createStripeCheckoutSession = async (req, res) => {
     res.json({ checkout_url: session.url });
   } catch (error) {
     console.error('Error creando checkout session:', error);
-    res.status(500).json({ error: 'No se pudo crear la sesión de pago' });
+    res.status(error.statusCode || 500).json({ error: error.message || 'No se pudo crear la sesión de pago' });
   }
 };
 
 exports.createImeiStripeCheckoutSession = async (req, res) => {
   try {
+    const stripe = getStripeClient();
     const { imei, service_id, guest_email } = req.body;
 
     if (!imei || !/^\d{15}$/.test(imei)) {
@@ -114,6 +145,11 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
       return res.status(400).json({ error: 'Precio de servicio inválido' });
     }
 
+    const unitAmount = toAmountInCents(price);
+    if (!unitAmount) {
+      return res.status(400).json({ error: 'Precio de servicio inválido para Stripe' });
+    }
+
     const frontendUrl = getFrontendUrl(req);
 
     const session = await stripe.checkout.sessions.create({
@@ -127,7 +163,7 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
               name: `IMEI Check: ${imei}`,
               description: service.service_name,
             },
-            unit_amount: Math.round(price * 100),
+            unit_amount: unitAmount,
           },
           quantity: 1,
         },
@@ -147,7 +183,7 @@ exports.createImeiStripeCheckoutSession = async (req, res) => {
     res.json({ url: session.url });
   } catch (error) {
     console.error('Error creando checkout session IMEI:', error);
-    res.status(500).json({ error: 'No se pudo crear la sesión de pago IMEI' });
+    res.status(error.statusCode || 500).json({ error: error.message || 'No se pudo crear la sesión de pago IMEI' });
   }
 };
 
@@ -158,6 +194,7 @@ exports.stripeWebhook = async (req, res) => {
 
   let event;
   try {
+    const stripe = getStripeClient();
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
     console.error('⚠️  Webhook signature verification failed.', err.message);
