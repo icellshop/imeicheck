@@ -121,7 +121,7 @@ async function recoverGuestOrderFromStripeSession(sessionId, ipAddress) {
       where: { stripe_checkout_session_id: sessionId },
       defaults: {
         order_id: null,
-        user_id: 999,
+        user_id: null, // guest orders have no user_id
         amount: 0,
         currency: (session.currency || 'usd').toUpperCase(),
         status: 'pending',
@@ -159,7 +159,7 @@ async function recoverGuestOrderFromStripeSession(sessionId, ipAddress) {
 
     if (!order) {
       order = await IMEIOrder.create({
-        user_id: 999,
+        user_id: null, // guest orders have no user_id
         imei,
         service_id: serviceId,
         status: 'pending',
