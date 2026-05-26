@@ -13,6 +13,16 @@ const BrandingSetting = sequelize.define(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    stripe_fee_percent: {
+      type: DataTypes.DECIMAL(10, 4),
+      allowNull: false,
+      defaultValue: 3.6,
+    },
+    stripe_fee_fixed: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+      defaultValue: 0.30,
+    },
     updated_by: {
       type: DataTypes.INTEGER,
       allowNull: true,

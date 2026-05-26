@@ -9,5 +9,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/', brandingController.getBranding);
 router.put('/logo', auth, onlySuperAdmin, upload.single('logo'), brandingController.uploadLogo);
+router.put('/stripe-fees', auth, onlySuperAdmin, brandingController.updateStripeFees);
 
 module.exports = router;

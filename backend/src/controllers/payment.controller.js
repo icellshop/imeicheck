@@ -2,6 +2,7 @@ const Payment = require('../models/payment');
 const User = require('../models/user');
 const ImeiOrder = require('../models/imei_order');
 const Service = require('../models/service');
+const BrandingSetting = require('../models/branding_setting');
 const sequelize = require('../../config/db');
 const { sendMail } = require('../utils/mailer');
 const Stripe = require('stripe');
@@ -16,6 +17,8 @@ try {
 // Cache temporal para resultado HTML de la API por session_id
 const imeiResultHtmlCache = {};
 const STRIPE_MIN_USD_AMOUNT = Number(process.env.STRIPE_MIN_USD_AMOUNT || 0.6);
+const DEFAULT_STRIPE_FEE_PERCENT = 3.6;
+const DEFAULT_STRIPE_FEE_FIXED = 0.30;
 
 function getStripeClient() {
   const secretKey = (process.env.STRIPE_SECRET_KEY || '').trim();
@@ -67,6 +70,117 @@ function getFrontendUrl(req) {
   return `${proto}://${host}`.replace(/\/$/, '');
 }
 
+async function applyRechargeFromCheckoutSession(session) {
+  const metadata = session.metadata || {};
+  if (!metadata.user_id) {
+    return { ok: false, reason: 'missing_user_id' };
+  }
+
+  const user_id = Number(metadata.user_id);
+  if (!Number.isFinite(user_id) || user_id <= 0) {
+    return { ok: false, reason: 'invalid_user_id' };
+  }
+
+  const amount = metadata.recharge_amount
+    ? Number(metadata.recharge_amount)
+    : (Number(session.amount_total) / 100);
+  const creditedAmount = metadata.original_amount
+    ? Number(metadata.original_amount)
+    : amount;
+  const currency = session.currency || 'usd';
+
+  if (!Number.isFinite(creditedAmount) || creditedAmount <= 0) {
+    return { ok: false, reason: 'invalid_amount' };
+  }
+
+  let tx;
+  try {
+    tx = await sequelize.transaction();
+
+    const [paymentRecord, created] = await Payment.findOrCreate({
+      where: { stripe_checkout_session_id: session.id },
+      defaults: {
+        user_id,
+        amount,
+        credited_amount: creditedAmount,
+        currency,
+        payment_method: 'stripe',
+        status: 'approved',
+        payment_reference: 'stripe_checkout',
+        stripe_checkout_session_id: session.id,
+        stripe_payment_intent_id: session.payment_intent,
+      },
+      transaction: tx,
+    });
+
+    if (!created) {
+      await tx.rollback();
+      return { ok: true, duplicate: true };
+    }
+
+    const user = await User.findByPk(user_id, {
+      transaction: tx,
+      lock: tx.LOCK.UPDATE,
+    });
+    if (!user) {
+      await tx.rollback();
+      return { ok: false, reason: 'user_not_found' };
+    }
+
+    const balance_before = Number(user.balance) || 0;
+    user.balance = balance_before + creditedAmount;
+    await user.save({ transaction: tx });
+
+    paymentRecord.user_id = user_id;
+    paymentRecord.amount = amount;
+    paymentRecord.credited_amount = creditedAmount;
+    paymentRecord.currency = currency;
+    paymentRecord.payment_method = 'stripe';
+    paymentRecord.status = 'approved';
+    paymentRecord.payment_reference = 'stripe_checkout';
+    paymentRecord.stripe_payment_intent_id = session.payment_intent;
+    paymentRecord.balance_before = balance_before;
+    paymentRecord.balance_after = user.balance;
+    await paymentRecord.save({ transaction: tx });
+
+    await tx.commit();
+
+    await sendMail({
+      to: user.email,
+      type: 'balance_recharge',
+      data: { amount: creditedAmount, currency, balance: user.balance }
+    });
+
+    return { ok: true, duplicate: false };
+  } catch (err) {
+    if (tx) {
+      try { await tx.rollback(); } catch (rollbackErr) {
+        console.error('Error rollback recarga checkout:', rollbackErr);
+      }
+    }
+    throw err;
+  }
+}
+
+async function getStripeFeeConfig() {
+  try {
+    const settings = await BrandingSetting.findOne({ order: [['setting_id', 'ASC']] });
+    const percent = Number(settings?.stripe_fee_percent);
+    const fixed = Number(settings?.stripe_fee_fixed);
+
+    return {
+      percent: Number.isFinite(percent) ? percent : DEFAULT_STRIPE_FEE_PERCENT,
+      fixed: Number.isFinite(fixed) ? fixed : DEFAULT_STRIPE_FEE_FIXED,
+    };
+  } catch (err) {
+    console.error('Error loading Stripe fee config, using defaults:', err.message || err);
+    return {
+      percent: DEFAULT_STRIPE_FEE_PERCENT,
+      fixed: DEFAULT_STRIPE_FEE_FIXED,
+    };
+  }
+}
+
 exports.createStripeCheckoutSession = async (req, res) => {
   try {
     const stripe = getStripeClient();
@@ -77,7 +191,8 @@ exports.createStripeCheckoutSession = async (req, res) => {
       return res.status(400).json({ error: 'Monto inválido' });
 
     const requestedAmount = Number(amount);
-    const stripeFee = Number((requestedAmount * 0.036 + 0.2).toFixed(2));
+    const feeConfig = await getStripeFeeConfig();
+    const stripeFee = Number((requestedAmount * (feeConfig.percent / 100) + feeConfig.fixed).toFixed(2));
     const checkoutAmount = Number((requestedAmount + stripeFee).toFixed(2));
 
     const user = await User.findByPk(user_id);
@@ -214,17 +329,15 @@ exports.stripeWebhook = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Procesa checkout.session.completed (flujo principal actual)
-  if (event.type === 'checkout.session.completed') {
+  // Procesa eventos de checkout exitoso (inmediato y asíncrono)
+  if (event.type === 'checkout.session.completed' || event.type === 'checkout.session.async_payment_succeeded') {
     const session = event.data.object;
     const metadata = session.metadata || {};
 
     if (metadata.imei && metadata.service_id) {
       const imei = metadata.imei;
       const service_id = metadata.service_id;
-      const user_id = 1; // guest user_id
       const user_type = 'guest';
-      const username = 'guest';
       const guest_email = metadata.email || null;
 
       let tx;
@@ -235,7 +348,7 @@ exports.stripeWebhook = async (req, res) => {
           where: { stripe_checkout_session_id: session.id },
           defaults: {
             order_id: null,
-            user_id: 1, // guest user_id
+            user_id: 1,
             amount: 0,
             currency: 'usd',
             status: 'pending',
@@ -260,7 +373,7 @@ exports.stripeWebhook = async (req, res) => {
         const price = user_type === 'guest' ? service.price_guest : service.price_registered;
 
         const imeiOrder = await ImeiOrder.create({
-          user_id: 1, // guest user_id
+          user_id: 1,
           imei,
           service_id,
           status: 'pending',
@@ -307,7 +420,6 @@ exports.stripeWebhook = async (req, res) => {
           imeiOrder.status = (apiData.success === true || apiData.status === 'success') ? 'completed' : 'failed';
           await imeiOrder.save();
 
-          // Guarda HTML para el frontend solo (cache temporal)
           if (session.id && apiData.result) {
             imeiResultHtmlCache[session.id] = {
               html: apiData.result,
@@ -316,7 +428,6 @@ exports.stripeWebhook = async (req, res) => {
             setTimeout(() => { delete imeiResultHtmlCache[session.id]; }, 5 * 60 * 1000);
           }
 
-          // Email: enviar el mismo HTML que frontend (con formato)
           if (guest_email && imeiOrder.status === 'completed' && apiData.result) {
             await sendMail({
               to: guest_email,
@@ -346,80 +457,13 @@ exports.stripeWebhook = async (req, res) => {
         console.error('Error procesando pago IMEI Stripe en webhook:', err);
       }
     } else if (metadata.user_id) {
-      const user_id = metadata.user_id;
-      const amount = metadata.recharge_amount
-        ? Number(metadata.recharge_amount)
-        : (Number(session.amount_total) / 100);
-      const creditedAmount = metadata.original_amount
-        ? Number(metadata.original_amount)
-        : amount;
-      const currency = session.currency || 'usd';
-
-      let tx;
       try {
-        tx = await sequelize.transaction();
-
-        const [paymentRecord, created] = await Payment.findOrCreate({
-          where: { stripe_checkout_session_id: session.id },
-          defaults: {
-            user_id,
-            amount,
-            credited_amount: creditedAmount,
-            currency,
-            payment_method: 'stripe',
-            status: 'approved',
-            payment_reference: 'stripe_checkout',
-            stripe_checkout_session_id: session.id,
-            stripe_payment_intent_id: session.payment_intent,
-          },
-          transaction: tx,
-        });
-        if (!created) {
-          await tx.rollback();
-          return res.status(200).end();
-        }
-
-        const user = await User.findByPk(user_id, {
-          transaction: tx,
-          lock: tx.LOCK.UPDATE,
-        });
-        if (!user) {
-          await tx.rollback();
-          return res.status(200).end();
-        }
-
-        const balance_before = Number(user.balance) || 0;
-        user.balance = balance_before + creditedAmount;
-        await user.save({ transaction: tx });
-
-        paymentRecord.user_id = user_id;
-        paymentRecord.amount = amount;
-        paymentRecord.credited_amount = creditedAmount;
-        paymentRecord.currency = currency;
-        paymentRecord.payment_method = 'stripe';
-        paymentRecord.status = 'approved';
-        paymentRecord.payment_reference = 'stripe_checkout';
-        paymentRecord.stripe_payment_intent_id = session.payment_intent;
-        paymentRecord.balance_before = balance_before;
-        paymentRecord.balance_after = user.balance;
-        await paymentRecord.save({ transaction: tx });
-
-        await tx.commit();
-
-        await sendMail({
-          to: user.email,
-          type: 'balance_recharge',
-          data: { amount: creditedAmount, currency, balance: user.balance }
-        });
+        await applyRechargeFromCheckoutSession(session);
       } catch (err) {
-        if (tx) {
-          try { await tx.rollback(); } catch (rollbackErr) {
-            console.error('Error rollback webhook recarga:', rollbackErr);
-          }
-        }
         console.error('Error procesando pago Stripe en webhook:', err);
       }
     }
+
     return res.status(200).end();
   }
 
@@ -432,11 +476,6 @@ exports.stripeWebhook = async (req, res) => {
     // Evita duplicados si ya existe un Payment con este intent
     const existing = await Payment.findOne({ where: { stripe_payment_intent_id: payment_intent_id } });
     if (existing) {
-      return res.status(200).end();
-    }
-
-    // Checkout Session ya es manejado en checkout.session.completed
-    if ((metadata.imei && metadata.service_id) || metadata.user_id) {
       return res.status(200).end();
     }
 
@@ -601,9 +640,27 @@ exports.stripeWebhook = async (req, res) => {
 exports.getPaymentBySession = async (req, res) => {
   const { session_id } = req.params;
   try {
-    const payment = await Payment.findOne({
+    let payment = await Payment.findOne({
       where: { stripe_checkout_session_id: session_id }
     });
+
+    // Fallback: si webhook falló o llegó tarde, sincroniza desde Stripe.
+    if (!payment) {
+      try {
+        const stripe = getStripeClient();
+        const session = await stripe.checkout.sessions.retrieve(session_id);
+        const isPaid = session && session.payment_status === 'paid';
+        if (isPaid) {
+          await applyRechargeFromCheckoutSession(session);
+          payment = await Payment.findOne({
+            where: { stripe_checkout_session_id: session_id }
+          });
+        }
+      } catch (syncErr) {
+        console.error('Error sincronizando pago por session_id:', syncErr.message || syncErr);
+      }
+    }
+
     if (!payment) {
       return res.status(404).json({ error: 'Payment not found' });
     }

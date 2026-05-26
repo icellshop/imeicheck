@@ -8,6 +8,11 @@ export default function AdminDashboard() {
   const [orderStats, setOrderStats] = useState(null);
   const [servicesUsage, setServicesUsage] = useState([]);
   const [paymentsTimeline, setPaymentsTimeline] = useState(null);
+  const [stripeFees, setStripeFees] = useState({ percent: '3.6', fixed: '0.30' });
+  const [feesLoading, setFeesLoading] = useState(false);
+  const [feesSaving, setFeesSaving] = useState(false);
+  const [feesMessage, setFeesMessage] = useState('');
+  const [feesError, setFeesError] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const isSuperAdmin = user?.user_type === 'superadmin';
@@ -48,6 +53,79 @@ export default function AdminDashboard() {
       clearInterval(timer);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    let cancelled = false;
+
+    async function loadStripeFees() {
+      setFeesLoading(true);
+      setFeesError('');
+      try {
+        const data = await apiFetch('/api/branding', {}, token);
+        if (!cancelled) {
+          setStripeFees({
+            percent: String(Number(data?.stripe_fee_percent ?? 3.6)),
+            fixed: Number(data?.stripe_fee_fixed ?? 0.3).toFixed(2),
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setFeesError(err.message);
+        }
+      } finally {
+        if (!cancelled) setFeesLoading(false);
+      }
+    }
+
+    loadStripeFees();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSuperAdmin, token]);
+
+  async function handleSaveStripeFees(e) {
+    e.preventDefault();
+    setFeesSaving(true);
+    setFeesMessage('');
+    setFeesError('');
+
+    const percent = Number(stripeFees.percent);
+    const fixed = Number(stripeFees.fixed);
+
+    if (!Number.isFinite(percent) || percent < 0 || percent > 100) {
+      setFeesSaving(false);
+      setFeesError('Fee percent must be between 0 and 100.');
+      return;
+    }
+
+    if (!Number.isFinite(fixed) || fixed < 0 || fixed > 1000) {
+      setFeesSaving(false);
+      setFeesError('Fixed fee must be between 0 and 1000.');
+      return;
+    }
+
+    try {
+      const response = await apiFetch('/api/branding/stripe-fees', {
+        method: 'PUT',
+        body: JSON.stringify({
+          stripe_fee_percent: percent,
+          stripe_fee_fixed: fixed,
+        }),
+      }, token);
+
+      setStripeFees({
+        percent: String(Number(response?.stripe_fee_percent ?? percent)),
+        fixed: Number(response?.stripe_fee_fixed ?? fixed).toFixed(2),
+      });
+      setFeesMessage('Stripe fee settings saved.');
+    } catch (err) {
+      setFeesError(err.message);
+    } finally {
+      setFeesSaving(false);
+    }
+  }
 
   if (loading) {
     return <div className="text-sm text-slate-400">Loading admin dashboard…</div>;
@@ -92,6 +170,70 @@ export default function AdminDashboard() {
             value={formatCoverageGap(quickStats)}
             accent="text-fuchsia-300"
           />
+        </div>
+      )}
+
+      {isSuperAdmin && (
+        <div className="bg-slate-900 rounded-xl border border-slate-800 p-5">
+          <h3 className="text-sm font-semibold text-slate-300 mb-4">Stripe Fee Settings</h3>
+
+          {feesLoading ? (
+            <p className="text-sm text-slate-400">Loading fee settings…</p>
+          ) : (
+            <form onSubmit={handleSaveStripeFees} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <label className="block">
+                  <span className="text-xs text-slate-400">Fee percent (%)</span>
+                  <input
+                    type="number"
+                    step="0.0001"
+                    min="0"
+                    max="100"
+                    value={stripeFees.percent}
+                    onChange={(e) => setStripeFees((prev) => ({ ...prev, percent: e.target.value }))}
+                    className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-xs text-slate-400">Fixed fee (USD)</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="1000"
+                    value={stripeFees.fixed}
+                    onChange={(e) => setStripeFees((prev) => ({ ...prev, fixed: e.target.value }))}
+                    className="mt-1 w-full rounded-lg bg-slate-800 border border-slate-700 px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500"
+                  />
+                </label>
+              </div>
+
+              <p className="text-xs text-slate-500">
+                Formula used at checkout: customer charge = recharge amount + (recharge amount * fee% / 100) + fixed fee.
+              </p>
+
+              {feesError && (
+                <div className="rounded-lg bg-rose-950 border border-rose-700 px-3 py-2 text-sm text-rose-300">
+                  {feesError}
+                </div>
+              )}
+
+              {feesMessage && (
+                <div className="rounded-lg bg-emerald-950 border border-emerald-700 px-3 py-2 text-sm text-emerald-300">
+                  {feesMessage}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={feesSaving}
+                className="rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 px-4 py-2 text-sm font-semibold text-white transition-colors"
+              >
+                {feesSaving ? 'Saving…' : 'Save Stripe Fees'}
+              </button>
+            </form>
+          )}
         </div>
       )}
 

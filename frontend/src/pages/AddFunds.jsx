@@ -4,6 +4,8 @@ import { apiFetch } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
 const PRESETS = [5, 10, 25, 50, 100];
+const DEFAULT_STRIPE_FEE_PERCENT = 3.6;
+const DEFAULT_STRIPE_FEE_FIXED = 0.30;
 
 export default function AddFunds() {
   const { token, user, refreshUser } = useAuth();
@@ -11,21 +13,90 @@ export default function AddFunds() {
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [feeConfig, setFeeConfig] = useState({
+    percent: DEFAULT_STRIPE_FEE_PERCENT,
+    fixed: DEFAULT_STRIPE_FEE_FIXED,
+  });
 
   // Detect Stripe return
   const fundsStatus = searchParams.get('funds');
   const sessionId = searchParams.get('session_id');
   const requestedAmount = Number(amount) || 0;
   const stripeFee = requestedAmount > 0
-    ? Number((requestedAmount * 0.036 + 0.2).toFixed(2))
+    ? Number((requestedAmount * (feeConfig.percent / 100) + feeConfig.fixed).toFixed(2))
     : 0;
   const totalCharge = Number((requestedAmount + stripeFee).toFixed(2));
 
   useEffect(() => {
-    if (fundsStatus === 'success') {
-      refreshUser();
+    let cancelled = false;
+
+    async function loadFeeConfig() {
+      try {
+        const branding = await apiFetch('/api/branding');
+        if (cancelled) return;
+
+        const percent = Number(branding?.stripe_fee_percent);
+        const fixed = Number(branding?.stripe_fee_fixed);
+
+        setFeeConfig({
+          percent: Number.isFinite(percent) ? percent : DEFAULT_STRIPE_FEE_PERCENT,
+          fixed: Number.isFinite(fixed) ? fixed : DEFAULT_STRIPE_FEE_FIXED,
+        });
+      } catch {
+        if (cancelled) return;
+        setFeeConfig({
+          percent: DEFAULT_STRIPE_FEE_PERCENT,
+          fixed: DEFAULT_STRIPE_FEE_FIXED,
+        });
+      }
     }
-  }, [fundsStatus]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    loadFeeConfig();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (fundsStatus !== 'success') return;
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 12;
+
+    const syncPayment = async () => {
+      if (!sessionId || !token) {
+        await refreshUser();
+        return;
+      }
+
+      try {
+        await apiFetch(`/api/payments/by-session/${sessionId}`, {}, token);
+      } catch (_err) {
+        // El backend hace fallback a Stripe; puede tardar en propagarse.
+      }
+
+      await refreshUser();
+    };
+
+    syncPayment();
+
+    const interval = setInterval(async () => {
+      if (cancelled) return;
+      attempts += 1;
+
+      await syncPayment();
+
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+      }
+    }, 2500);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [fundsStatus, sessionId, token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleCheckout(e) {
     e.preventDefault();
@@ -128,7 +199,7 @@ export default function AddFunds() {
           </div>
           {requestedAmount > 0 && (
             <p className="mt-2 text-xs text-slate-400">
-              You receive ${requestedAmount.toFixed(2)}. Stripe fee (3.6% + $0.20): ${stripeFee.toFixed(2)}. Total charge: ${totalCharge.toFixed(2)}.
+              You receive ${requestedAmount.toFixed(2)}. Stripe fee ({feeConfig.percent.toFixed(2)}% + ${feeConfig.fixed.toFixed(2)}): ${stripeFee.toFixed(2)}. Total charge: ${totalCharge.toFixed(2)}.
             </p>
           )}
         </div>
